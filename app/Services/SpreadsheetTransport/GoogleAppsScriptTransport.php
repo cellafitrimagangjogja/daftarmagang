@@ -78,8 +78,17 @@ class GoogleAppsScriptTransport implements SpreadsheetSidecarTransportInterface
             );
         }
 
+        $statusColor = $payload['status_color'] ?? ($payload['ROW_COLOR'] ?? null);
+        $cleanPayload = $payload;
+        unset($cleanPayload['status_color'], $cleanPayload['ROW_COLOR']);
+
         // Sanitize formula injection on payload values
-        $sanitizedPayload = $this->sanitizePayloadForFormulas($payload);
+        $sanitizedPayload = $this->sanitizePayloadForFormulas($cleanPayload);
+
+        $schemaHeaders = array_values(array_filter(
+            array_keys($sanitizedPayload),
+            fn($k) => !in_array($k, ['values_by_position', 'status_color', 'ROW_COLOR', 'expected_schema_hash'], true)
+        ));
 
         $innerPayload = [
             'action'            => 'upsert_row',
@@ -88,8 +97,9 @@ class GoogleAppsScriptTransport implements SpreadsheetSidecarTransportInterface
             'tab_name'          => $tabName,
             'sync_id'           => $syncId,
             'payload'           => $sanitizedPayload,
-            'schema_headers'    => array_keys($sanitizedPayload),
+            'schema_headers'    => $schemaHeaders,
             'auto_sync_headers' => true,
+            'status_color'      => $statusColor,
         ];
 
         return $this->dispatchSignedRequest($endpoint, $innerPayload, $syncId);
@@ -115,8 +125,17 @@ class GoogleAppsScriptTransport implements SpreadsheetSidecarTransportInterface
             );
         }
 
+        $statusColor = $payload['status_color'] ?? ($payload['ROW_COLOR'] ?? null);
+        $cleanPayload = $payload;
+        unset($cleanPayload['status_color'], $cleanPayload['ROW_COLOR']);
+
         // Sanitize formula injection on payload values
-        $sanitizedPayload = $this->sanitizePayloadForFormulas($payload);
+        $sanitizedPayload = $this->sanitizePayloadForFormulas($cleanPayload);
+
+        $schemaHeaders = array_values(array_filter(
+            array_keys($sanitizedPayload),
+            fn($k) => !in_array($k, ['values_by_position', 'status_color', 'ROW_COLOR', 'expected_schema_hash'], true)
+        ));
 
         $innerPayload = [
             'action'            => 'update_row',
@@ -125,8 +144,9 @@ class GoogleAppsScriptTransport implements SpreadsheetSidecarTransportInterface
             'tab_name'          => $tabName,
             'sync_id'           => $syncId,
             'payload'           => $sanitizedPayload,
-            'schema_headers'    => array_keys($sanitizedPayload),
+            'schema_headers'    => $schemaHeaders,
             'auto_sync_headers' => true,
+            'status_color'      => $statusColor,
         ];
 
         return $this->dispatchSignedRequest($endpoint, $innerPayload, $syncId);

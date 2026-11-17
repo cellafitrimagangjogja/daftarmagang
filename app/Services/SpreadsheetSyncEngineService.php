@@ -807,7 +807,18 @@ class SpreadsheetSyncEngineService
 
         // Add dynamic metadata for remote payload
         $transportPayload = $payload;
-        $transportPayload['SERTIF_LAST_SYNC_AT'] = now()->toIso8601String();
+        $nowIso = now()->toIso8601String();
+        $transportPayload['SERTIF_LAST_SYNC_AT'] = $nowIso;
+        if (isset($transportPayload['values_by_position']) && is_array($transportPayload['values_by_position'])) {
+            foreach ($transportPayload['values_by_position'] as &$p) {
+                $hdr = strtoupper(trim((string) ($p['header'] ?? '')));
+                $ident = strtolower(trim((string) ($p['column_identity'] ?? '')));
+                if ($hdr === 'SERTIF_LAST_SYNC_AT' || str_contains($ident, 'last_synced_at')) {
+                    $p['val'] = $nowIso;
+                }
+            }
+            unset($p);
+        }
 
         // 4. Dispatch remote HTTP request to transport
         // S17.18B: Route to sendRowUpdateOnly if entity requires update-only, otherwise sendRowUpsert
@@ -986,6 +997,31 @@ class SpreadsheetSyncEngineService
             $payload = $this->registrationMappingService->buildOutboundRowPayload($entity, null, $rowSync, $allowPendaftar);
             $payload['SERTIF_SYNC_ID'] = $rowSync->external_sync_id;
             $payload['SERTIF_SYNC_STATUS'] = 'synced';
+            $payload['SERTIF_LAST_SYNC_AT'] = $rowSync->last_synced_at?->toIso8601String() ?? '';
+
+            // Set kode warna status
+            $statusColor = $this->resolveRegistrationStatusColor($entity);
+            $payload['status_color'] = $statusColor;
+            $payload['ROW_COLOR'] = $statusColor;
+
+            // Pastikan values_by_position juga sinkron secara atomik
+            if (isset($payload['values_by_position']) && is_array($payload['values_by_position'])) {
+                foreach ($payload['values_by_position'] as &$p) {
+                    $hdr = strtoupper(trim((string) ($p['header'] ?? '')));
+                    $ident = strtolower(trim((string) ($p['column_identity'] ?? '')));
+                    if ($hdr === 'SERTIF_SYNC_ID' || str_contains($ident, 'sync_id')) {
+                        $p['val'] = $rowSync->external_sync_id;
+                    } elseif ($hdr === 'SERTIF_SYNC_STATUS' || str_contains($ident, 'sync_status')) {
+                        $p['val'] = 'synced';
+                    } elseif ($hdr === 'SERTIF_LAST_SYNC_AT' || str_contains($ident, 'last_synced_at')) {
+                        $p['val'] = $payload['SERTIF_LAST_SYNC_AT'];
+                    } elseif ($hdr === 'SERTIF_REGISTRATION_ID' || str_contains($ident, 'registration_id')) {
+                        $p['val'] = (string) $entity->id;
+                    }
+                }
+                unset($p);
+            }
+
             return $payload;
         }
 
@@ -1006,6 +1042,39 @@ class SpreadsheetSyncEngineService
         }
 
         throw new DomainException('Tipe entitas tidak dikenali.');
+    }
+
+    /**
+     * Resolusi kode warna hex berdasarkan status follow-up atau status magang pendaftar.
+     */
+    public function resolveRegistrationStatusColor(InternshipRegistration $registration): string
+    {
+        // 1. Jika ada followup_status, utamakan warna follow-up standar Seven Inc
+        if (!empty($registration->followup_status)) {
+            return match ($registration->followup_status) {
+                InternshipRegistration::FOLLOWUP_NOT_FOLLOWED_UP       => '#ffffff',
+                InternshipRegistration::FOLLOWUP_AWAITING_AGREEMENT    => '#4f95a3',
+                InternshipRegistration::FOLLOWUP_MOVED_TO_PARTICIPANTS => '#fff200',
+                InternshipRegistration::FOLLOWUP_INTERNSHIP_STARTED    => '#00ff00',
+                InternshipRegistration::FOLLOWUP_INTERNSHIP_CANCELLED  => '#ff0000',
+                InternshipRegistration::FOLLOWUP_NOT_YET_ACC           => '#ff00ff',
+                InternshipRegistration::FOLLOWUP_INTERNSHIP_COMPLETED  => '#ff9900',
+                InternshipRegistration::FOLLOWUP_AWAITING_DATES        => '#00e5ee',
+                default                                                => '#ffffff',
+            };
+        }
+
+        // 2. Fallback berdasarkan internship_status
+        return match ($registration->internship_status) {
+            InternshipRegistration::STATUS_ACTIVE    => '#00ff00',
+            InternshipRegistration::STATUS_ACCEPTED  => '#fff200',
+            InternshipRegistration::STATUS_COMPLETED => '#ff9900',
+            InternshipRegistration::STATUS_REJECTED  => '#ff0000',
+            InternshipRegistration::STATUS_EXITED    => '#ff0000',
+            InternshipRegistration::STATUS_PENDING   => '#fff2cc',
+            InternshipRegistration::STATUS_WAITING   => '#ffffff',
+            default                                  => '#ffffff',
+        };
     }
 
     /**

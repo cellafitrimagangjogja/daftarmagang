@@ -1187,7 +1187,7 @@ class InternController extends Controller
                 } else {
                     $rowSync = $syncEngine->queueSyncForRegistration($intern, allowPendaftar: true);
                     if ($rowSync) {
-                        $syncEngine->processSyncRecord($rowSync, allowPendaftar: true);
+                        $syncEngine->processSyncRecord($rowSync, force: true, allowPendaftar: true);
                     }
                 }
             } catch (\Throwable $sheetErr) {
@@ -1659,7 +1659,7 @@ class InternController extends Controller
                 } else {
                     $rowSync = $syncEngine->queueSyncForRegistration($intern, allowPendaftar: true);
                     if ($rowSync) {
-                        $syncEngine->processSyncRecord($rowSync, allowPendaftar: true);
+                        $syncEngine->processSyncRecord($rowSync, force: true, allowPendaftar: true);
                     }
                 }
             } catch (\Throwable $sheetErr) {
@@ -1710,6 +1710,19 @@ class InternController extends Controller
             }
             return back()->withInput()->with('error', $e->getMessage());
         }
+
+        // Sinkronkan pembaruan status follow-up dan warna ke Google Spreadsheet secara instan (afterResponse)
+        dispatch(function () use ($intern) {
+            try {
+                $syncEngine = app(\App\Services\SpreadsheetSyncEngineService::class);
+                $rowSync = $syncEngine->queueSyncForRegistration($intern, allowPendaftar: true);
+                if ($rowSync) {
+                    $syncEngine->processSyncRecord($rowSync, force: true, allowPendaftar: true);
+                }
+            } catch (\Throwable $sheetErr) {
+                \Illuminate\Support\Facades\Log::warning("Spreadsheet sync error on followup update #{$intern->id}: " . $sheetErr->getMessage());
+            }
+        })->afterResponse();
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
@@ -1797,7 +1810,7 @@ class InternController extends Controller
                     try {
                         $rowSync = $syncEngine->queueSyncForRegistration($internToSync, allowPendaftar: true);
                         if ($rowSync) {
-                            $syncEngine->processSyncRecord($rowSync, allowPendaftar: true);
+                            $syncEngine->processSyncRecord($rowSync, force: true, allowPendaftar: true);
                         }
                     } catch (\Throwable $sheetErr) {
                         \Illuminate\Support\Facades\Log::warning("Spreadsheet bulk sync error on intern #{$internToSync->id}: " . $sheetErr->getMessage());

@@ -118,8 +118,18 @@ class WordTableView extends TableView {
             || attrs['data-table-style'] === 'borderless';
 
         if (isBorderlessTable) {
+            this.table.className = 'mou-table-borderless';
+            this.table.setAttribute('data-table-style', 'borderless');
             this.table.style.border = 'none';
             this.table.style.borderCollapse = 'collapse';
+            this.table.querySelectorAll('td, th').forEach(cell => {
+                cell.style.border = 'none';
+                cell.style.borderTop = 'none';
+                cell.style.borderRight = 'none';
+                cell.style.borderBottom = 'none';
+                cell.style.borderLeft = 'none';
+                cell.setAttribute('data-border-style', 'none');
+            });
         } else if (attrs.class && (attrs.class.includes('mou-table-bordered') || attrs.class.includes('mou-correspondence-table') || attrs.class.includes('mou-paraf-table'))) {
             this.table.style.border = '1px solid #000000';
             this.table.style.borderCollapse = 'collapse';
@@ -844,6 +854,11 @@ const WordTable = Table.extend({
                 parseHTML: el => el.getAttribute('class') || null,
                 renderHTML: attrs => (attrs.class ? { class: attrs.class } : {}),
             },
+            tableStyle: {
+                default: null,
+                parseHTML: el => el.getAttribute('data-table-style') || (el.classList.contains('mou-table-borderless') ? 'borderless' : (el.classList.contains('mou-table-bordered') ? 'bordered' : null)),
+                renderHTML: attrs => (attrs.tableStyle ? { 'data-table-style': attrs.tableStyle } : {}),
+            },
             tableWidth: {
                 default: null,
                 parseHTML: el => {
@@ -872,12 +887,20 @@ const WordTable = Table.extend({
     },
     renderHTML({ node, HTMLAttributes }) {
         const styles = [];
+        const isBorderless = (node.attrs.class && node.attrs.class.includes('mou-table-borderless'))
+            || node.attrs.tableStyle === 'borderless';
+
         if (node.attrs.rawStyle) {
-            // Keep existing inline styles except width if overridden by tableWidth
+            // Keep existing inline styles except width and borders (if borderless)
             const cleaned = node.attrs.rawStyle
                 .split(';')
                 .map(s => s.trim())
-                .filter(s => s && !/^width\s*:/i.test(s));
+                .filter(s => {
+                    if (!s) return false;
+                    if (/^width\s*:/i.test(s)) return false;
+                    if (isBorderless && /^border(-[a-z]+)?\s*:/i.test(s)) return false;
+                    return true;
+                });
             styles.push(...cleaned);
         }
         const widthVal = node.attrs.tableWidth || '100%';
@@ -885,19 +908,28 @@ const WordTable = Table.extend({
         styles.push('border-collapse: collapse');
         styles.push('table-layout: fixed');
 
+        if (isBorderless) {
+            styles.push('border: none');
+        }
+
         if (node.attrs.tableAlign === 'center') {
             styles.push('margin-left: auto', 'margin-right: auto');
         } else if (node.attrs.tableAlign === 'right') {
             styles.push('margin-left: auto', 'margin-right: 0');
         }
 
+        const classVal = isBorderless ? 'mou-table-borderless' : (node.attrs.class || '');
+
         const attrs = mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
+            class: classVal,
             'data-table-width': widthVal,
+            'data-table-style': isBorderless ? 'borderless' : (node.attrs.tableStyle || ''),
             style: buildStyleString(styles),
         });
         delete attrs.rawStyle;
         delete attrs.tableWidth;
         delete attrs.tableAlign;
+        delete attrs.tableStyle;
 
         // Also output colgroup from first row colwidths for round-trip & DomPDF
         const colElements = [];
@@ -1139,6 +1171,7 @@ function renderTableCellHTML(tag, node, HTMLAttributes, baseHTMLAttributes) {
 
     if (node.attrs.rawBorder) {
         if (node.attrs.rawBorder === 'none') {
+            attrs['data-border-style'] = 'none';
             styles.push('border: none');
         } else if (/^border(-[a-z]+)?\s*:/i.test(node.attrs.rawBorder)) {
             styles.push(node.attrs.rawBorder);
@@ -1967,8 +2000,31 @@ function normalizeLegacyHtmlForTiptap(rawHtml) {
 
     // Ensure tables with colgroup or cell widths have explicit attributes for Tiptap
     root.querySelectorAll('table').forEach(table => {
-        // Elevate bare / imported tables to standard bordered correspondence tables
-        if (!table.className || (!table.classList.contains('mou-table-bordered') && !table.classList.contains('mou-table-borderless') && !table.classList.contains('mou-correspondence-table') && !table.classList.contains('mou-paraf-table'))) {
+        const explicitBorderless = table.classList.contains('mou-table-borderless')
+            || table.getAttribute('data-table-style') === 'borderless'
+            || table.getAttribute('data-table-style') === 'none'
+            || (table.getAttribute('style') || '').toLowerCase().includes('border: none')
+            || (table.getAttribute('style') || '').toLowerCase().includes('border: 0');
+
+        // Check if table has explicit borders
+        const hasExplicitBorder = (table.getAttribute('border') && table.getAttribute('border') !== '0')
+            || table.classList.contains('mou-table-bordered')
+            || table.classList.contains('mou-correspondence-table')
+            || table.classList.contains('mou-paraf-table')
+            || Array.from(table.querySelectorAll('td, th')).some(c => {
+                const s = c.getAttribute('style') || '';
+                return /border(-[a-z]+)?\s*:\s*(?!none|0px|0\b)[^;]+/i.test(s);
+            });
+
+        const isTableBorderless = explicitBorderless || (!hasExplicitBorder && !table.classList.contains('mou-table-bordered'));
+
+        if (isTableBorderless) {
+            table.classList.remove('mou-table-bordered');
+            table.classList.remove('mou-correspondence-table');
+            table.classList.add('mou-table-borderless');
+            table.setAttribute('data-table-style', 'borderless');
+            table.style.border = 'none';
+        } else if (!table.className || (!table.classList.contains('mou-table-bordered') && !table.classList.contains('mou-table-borderless') && !table.classList.contains('mou-correspondence-table') && !table.classList.contains('mou-paraf-table'))) {
             table.classList.add('mou-table-bordered');
             table.classList.add('mou-correspondence-table');
         }
@@ -1994,22 +2050,24 @@ function normalizeLegacyHtmlForTiptap(rawHtml) {
             }
         });
 
-        const isTableBorderless = table.classList.contains('mou-table-borderless')
-            || table.getAttribute('data-table-style') === 'borderless'
-            || table.getAttribute('data-table-style') === 'none';
-
-        if (isTableBorderless) {
-            table.style.border = 'none';
-        }
-
         table.querySelectorAll('td, th').forEach(cell => {
-            if (!cell.style.padding) {
-                cell.style.padding = '5pt 7pt';
-            }
-            if (!cell.style.border) {
-                cell.style.border = isTableBorderless ? 'none' : '1px solid #000000';
-            } else if (isTableBorderless && (cell.style.border === '1px solid #000000' || cell.style.border === '1px solid rgb(0, 0, 0)')) {
+            if (isTableBorderless) {
                 cell.style.border = 'none';
+                cell.style.borderTop = 'none';
+                cell.style.borderRight = 'none';
+                cell.style.borderBottom = 'none';
+                cell.style.borderLeft = 'none';
+                cell.setAttribute('data-border-style', 'none');
+                if (!cell.style.padding) {
+                    cell.style.padding = '3px 0';
+                }
+            } else {
+                if (!cell.style.padding) {
+                    cell.style.padding = '5pt 7pt';
+                }
+                if (!cell.style.border) {
+                    cell.style.border = '1px solid #000000';
+                }
             }
         });
     });
@@ -2153,9 +2211,14 @@ function synchronizeSerializedHtml(rawHtml) {
     root.querySelectorAll('table').forEach(table => {
         const isTableBorderless = table.classList.contains('mou-table-borderless')
             || table.getAttribute('data-table-style') === 'borderless'
-            || table.getAttribute('data-table-style') === 'none';
+            || table.getAttribute('data-table-style') === 'none'
+            || (table.getAttribute('style') || '').toLowerCase().includes('border: none');
 
         if (isTableBorderless) {
+            table.classList.remove('mou-table-bordered');
+            table.classList.remove('mou-correspondence-table');
+            table.classList.add('mou-table-borderless');
+            table.setAttribute('data-table-style', 'borderless');
             table.style.border = 'none';
         }
 
