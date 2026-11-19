@@ -14,12 +14,22 @@
     html { scroll-behavior: smooth; }
     @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
     @media (prefers-reduced-motion: reduce) { [style*="animation:blink"] { animation: none !important; } }
     .float { animation: float 5s ease-in-out infinite; }
-    .card { transition: transform .2s, box-shadow .2s; }
-    .card:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(26,92,56,.12); }
+    .card { transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease; }
+    .card:hover { transform: translateY(-6px); box-shadow: 0 18px 40px rgba(26,92,56,.14); border-color: #bbf7d0; }
+    .divisi-chip { transition: all .2s ease; cursor: default; }
+    .divisi-chip:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(26,92,56,.15); background:#ecfdf5; border-color:#6ee7b7; }
     input:focus { outline: none; }
     .nav { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+    .section-label {
+      display:inline-flex; align-items:center; gap:8px;
+      background:#ecfdf5; border:1px solid #d1fae5;
+      color:#1a5c38; font-size:11px; font-weight:700;
+      text-transform:uppercase; letter-spacing:.12em;
+      padding:6px 14px; border-radius:100px;
+    }
   </style>
 </head>
 <body style="background:#f8faf9; color:#1a1a1a; overflow-x:hidden; color-scheme:light;">
@@ -63,29 +73,78 @@
 </nav>
 
 {{-- HERO --}}
-<section style="background:linear-gradient(135deg,#0a2e1c 0%,#1a5c38 55%,#0d3d25 100%);min-height:100vh;display:flex;align-items:center;padding-top:60px;">
-  <div style="max-width:1100px;margin:0 auto;padding:80px 20px;display:grid;grid-template-columns:1fr;gap:48px;align-items:center;">
+<section style="
+  position:relative;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  padding-top:60px;
+  overflow:hidden;
+  background:#0a2e1c;
+">
+  {{-- Background Image --}}
+  <div style="
+    position:absolute;
+    inset:0;
+    background-image:url('{{ asset('images/assets/herosec.jpg') }}');
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    z-index:0;
+  "></div>
+
+  {{-- Overlay Gradient Tipis (multi-layer) --}}
+  <div style="
+    position:absolute;
+    inset:0;
+    background:
+      linear-gradient(to bottom,
+        rgba(10,46,28,0.55) 0%,
+        rgba(26,92,56,0.25) 40%,
+        rgba(13,61,37,0.45) 75%,
+        rgba(10,46,28,0.85) 100%),
+      linear-gradient(135deg,
+        rgba(26,92,56,0.35) 0%,
+        rgba(10,46,28,0.15) 50%,
+        rgba(26,92,56,0.40) 100%);
+    z-index:1;
+  "></div>
+
+  <div style="
+    position:relative;
+    z-index:2;
+    max-width:1100px;
+    margin:0 auto;
+    padding:80px 20px;
+    display:grid;
+    grid-template-columns:1fr;
+    gap:48px;
+    align-items:center;
+  ">
     <div style="text-align:center;">
-      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:6px 16px;margin-bottom:24px;">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:100px;padding:6px 16px;margin-bottom:24px;backdrop-filter:blur(8px);">
         <span style="width:8px;height:8px;border-radius:50%;background:#4ade80;animation:blink 1.5s ease-in-out infinite;"></span>
-        <span style="color:rgba(255,255,255,.8);font-size:13px;font-weight:500;">Pendaftaran Magang Dibuka</span>
+        <span style="color:rgba(255,255,255,.95);font-size:13px;font-weight:500;">Pendaftaran Magang Dibuka</span>
       </div>
-      <h1 style="color:#fff;font-size:clamp(32px,5vw,52px);font-weight:800;line-height:1.2;margin-bottom:16px;">
+      <h1 style="color:#fff;font-size:clamp(32px,5vw,52px);font-weight:800;line-height:1.2;margin-bottom:16px;text-shadow:0 3px 18px rgba(0,0,0,.55), 0 1px 3px rgba(0,0,0,.4);">
         Mulai Karir Impianmu<br>
         <span style="color:#86efac;">Bersama InternHub</span>
       </h1>
-      <p style="color:rgba(255,255,255,.7);font-size:17px;line-height:1.7;margin-bottom:32px;max-width:540px;margin-left:auto;margin-right:auto;">
+      <p style="color:rgba(255,255,255,.9);font-size:17px;line-height:1.7;margin-bottom:32px;max-width:540px;margin-left:auto;margin-right:auto;text-shadow:0 2px 10px rgba(0,0,0,.5);">
         Program magang profesional di berbagai divisi. Dapatkan pengalaman nyata,
         mentoring langsung, dan dokumen resmi yang diakui industri.
       </p>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-        <a href="{{ route('user.register') }}" style="display:inline-flex;align-items:center;gap:8px;background:#4ade80;color:#14532d;font-weight:700;font-size:14px;padding:14px 28px;border-radius:12px;text-decoration:none;box-shadow:0 4px 20px rgba(74,222,128,.3);">
+        <a href="{{ route('user.register') }}" style="display:inline-flex;align-items:center;gap:8px;background:#4ade80;color:#14532d;font-weight:700;font-size:14px;padding:14px 28px;border-radius:12px;text-decoration:none;box-shadow:0 4px 20px rgba(74,222,128,.35);transition:.2s;"
+           onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 28px rgba(74,222,128,.5)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 20px rgba(74,222,128,.35)'">
           <i class="fas fa-rocket" style="font-size:12px;"></i> Daftar Sekarang
         </a>
-        <a href="#ketentuan" style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);font-weight:500;font-size:14px;padding:14px 24px;border-radius:12px;text-decoration:none;">
+        <a href="#ketentuan" style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);font-weight:500;font-size:14px;padding:14px 24px;border-radius:12px;text-decoration:none;backdrop-filter:blur(8px);transition:.2s;"
+           onmouseover="this.style.background='rgba(255,255,255,.25)'" onmouseout="this.style.background='rgba(255,255,255,.15)'">
           <i class="fas fa-info-circle" style="font-size:12px;"></i> Pelajari Lebih
         </a>
       </div>
+
       {{-- Stats --}}
       @php
         $divisionList = $divisions ?? \App\Models\Division::active()->pluck('name');
@@ -97,8 +156,8 @@
       <div style="display:flex;justify-content:center;gap:48px;margin-top:56px;flex-wrap:wrap;">
         @foreach([[$divStatLabel,'Divisi Magang'],['100+','Alumni Magang'],['100%','Dokumen Resmi']] as [$num,$label])
         <div style="text-align:center;">
-          <div style="font-size:32px;font-weight:800;color:#fff;">{{ $num }}</div>
-          <div style="font-size:12px;color:rgba(255,255,255,.55);margin-top:2px;">{{ $label }}</div>
+          <div style="font-size:32px;font-weight:800;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.6);">{{ $num }}</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:2px;text-shadow:0 1px 4px rgba(0,0,0,.4);">{{ $label }}</div>
         </div>
         @endforeach
       </div>
@@ -107,14 +166,17 @@
 </section>
 
 {{-- KETENTUAN --}}
-<section id="ketentuan" style="padding:80px 20px;background:#fff;">
+<section id="ketentuan" style="padding:96px 20px;background:linear-gradient(180deg,#ffffff 0%,#f8faf9 100%);position:relative;">
   <div style="max-width:1100px;margin:0 auto;">
-    <div style="text-align:center;margin-bottom:48px;">
-      <p style="color:#1a5c38;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Ketentuan Program</p>
-      <h2 style="font-size:32px;font-weight:800;color:#111;margin-bottom:8px;">Apa yang Perlu Kamu Tahu</h2>
-      <p style="color:#6b7280;max-width:480px;margin:0 auto;line-height:1.6;">Baca ketentuan berikut sebelum mendaftar agar proses magang berjalan lancar.</p>
+    <div style="text-align:center;margin-bottom:56px;">
+      <div class="section-label" style="margin-bottom:14px;">
+        <i class="fas fa-clipboard-list" style="font-size:10px;"></i>
+        Ketentuan Program
+      </div>
+      <h2 style="font-size:clamp(26px,3.5vw,36px);font-weight:800;color:#111;margin-bottom:12px;letter-spacing:-.02em;">Apa yang Perlu Kamu Tahu</h2>
+      <p style="color:#6b7280;max-width:520px;margin:0 auto;line-height:1.7;font-size:15px;">Baca ketentuan berikut sebelum mendaftar agar proses magang berjalan lancar.</p>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:22px;">
       @php
         $items = [
           ['fa-calendar-alt','#dcfce7','#15803d','Jadwal Magang','Senin–Sabtu. Shift Pagi (06.30–13.00), Siang (13.00–21.00), atau Middle (09.00–17.00 WIB).'],
@@ -126,12 +188,13 @@
         ];
       @endphp
       @foreach($items as [$icon,$bg,$color,$title,$desc])
-      <div class="card" style="background:#fff;border:1px solid #f3f4f6;border-radius:16px;padding:24px;box-shadow:0 1px 4px rgba(0,0,0,.05);">
-        <div style="width:44px;height:44px;border-radius:10px;background:{{ $bg }};display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
-          <i class="fas {{ $icon }}" style="color:{{ $color }};font-size:16px;"></i>
+      <div class="card" style="background:#fff;border:1px solid #eef2f0;border-radius:18px;padding:28px 24px;box-shadow:0 2px 10px rgba(0,0,0,.04);position:relative;overflow:hidden;">
+        <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,{{ $color }},transparent);opacity:.5;"></div>
+        <div style="width:48px;height:48px;border-radius:12px;background:{{ $bg }};display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+          <i class="fas {{ $icon }}" style="color:{{ $color }};font-size:17px;"></i>
         </div>
-        <h3 style="font-weight:700;color:#111;margin-bottom:8px;font-size:15px;">{{ $title }}</h3>
-        <p style="font-size:13px;color:#6b7280;line-height:1.65;">{{ $desc }}</p>
+        <h3 style="font-weight:700;color:#111;margin-bottom:8px;font-size:15.5px;">{{ $title }}</h3>
+        <p style="font-size:13.5px;color:#6b7280;line-height:1.7;margin:0;">{{ $desc }}</p>
       </div>
       @endforeach
     </div>
@@ -139,13 +202,24 @@
 </section>
 
 {{-- DIVISI --}}
-<section style="padding:72px 20px;background:#f0f7f3;">
-  <div style="max-width:1100px;margin:0 auto;text-align:center;">
-    <p style="color:#1a5c38;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Divisi Tersedia</p>
-    <h2 style="font-size:32px;font-weight:800;color:#111;margin-bottom:32px;">Pilih Bidangmu</h2>
-    <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
+<section style="padding:96px 20px;background:#f0f7f3;position:relative;overflow:hidden;">
+  {{-- dekorasi blob --}}
+  <div style="position:absolute;top:-80px;right:-80px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(74,222,128,.18),transparent 70%);pointer-events:none;"></div>
+  <div style="position:absolute;bottom:-100px;left:-100px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(26,92,56,.12),transparent 70%);pointer-events:none;"></div>
+
+  <div style="max-width:1100px;margin:0 auto;text-align:center;position:relative;z-index:1;">
+    <div class="section-label" style="margin-bottom:14px;">
+      <i class="fas fa-layer-group" style="font-size:10px;"></i>
+      Divisi Tersedia
+    </div>
+    <h2 style="font-size:clamp(26px,3.5vw,36px);font-weight:800;color:#111;margin-bottom:14px;letter-spacing:-.02em;">Pilih Bidangmu</h2>
+    <p style="color:#6b7280;max-width:520px;margin:0 auto 40px;line-height:1.7;font-size:15px;">Temukan divisi yang paling sesuai dengan minat dan keahlianmu.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;">
       @forelse($divisionList as $div)
-      <span style="background:#fff;border:1px solid #d1fae5;color:#065f46;font-size:13px;font-weight:500;padding:8px 18px;border-radius:100px;box-shadow:0 1px 3px rgba(0,0,0,.05);display:inline-block;transition:all .15s ease;">{{ is_string($div) ? $div : ($div->name ?? $div) }}</span>
+      <span class="divisi-chip" style="background:#fff;border:1px solid #d1fae5;color:#065f46;font-size:13.5px;font-weight:600;padding:10px 20px;border-radius:100px;box-shadow:0 2px 6px rgba(0,0,0,.05);display:inline-flex;align-items:center;gap:8px;">
+        <span style="width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block;"></span>
+        {{ is_string($div) ? $div : ($div->name ?? $div) }}
+      </span>
       @empty
       <p style="color:#6b7280;font-size:14px;">Belum ada divisi yang tersedia.</p>
       @endforelse
@@ -153,22 +227,19 @@
   </div>
 </section>
 
-
-
 {{-- FOOTER --}}
-<footer style="background:#fff;border-top:1px solid #f3f4f6;padding:28px 20px;">
-  <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-    <div style="display:flex;align-items:center;gap:8px;">
-      <div style="width:24px;height:24px;border-radius:6px;background:#1a5c38;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800;">IH</div>
-      <span style="font-size:13px;font-weight:600;color:#374151;">InternHub</span>
+<footer style="background:linear-gradient(180deg,#ffffff 0%,#f8faf9 100%);border-top:1px solid #eef2f0;padding:32px 20px;">
+  <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="width:28px;height:28px;border-radius:8px;background:#1a5c38;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800;box-shadow:0 2px 8px rgba(26,92,56,.25);">IH</div>
+      <span style="font-size:13.5px;font-weight:700;color:#374151;">InternHub</span>
     </div>
-    <p style="font-size:12px;color:#9ca3af;">© {{ date('Y') }} InternHub. Program Magang Profesional Yogyakarta.</p>
-    <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#6b7280;">
+    <p style="font-size:12.5px;color:#9ca3af;margin:0;">© {{ date('Y') }} InternHub. Program Magang Profesional Yogyakarta.</p>
+    <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:#6b7280;">
       <i class="fas fa-map-marker-alt" style="color:#1a5c38;"></i> Yogyakarta, Indonesia
     </div>
   </div>
 </footer>
-
 
 </body>
 </html>

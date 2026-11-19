@@ -2287,12 +2287,12 @@ function synchronizeSerializedHtml(rawHtml) {
                     }
                 }
                 if (isTableBorderless) {
-                    if (cell.style.border === '1px solid #000000' || cell.style.border === '1px solid rgb(0, 0, 0)') {
-                        cell.style.border = 'none';
-                    }
-                    if (cell.style.borderRight === '1px solid #000000' || cell.style.borderRight === '1px solid rgb(0, 0, 0)') {
-                        cell.style.borderRight = 'none';
-                    }
+                    cell.style.border = 'none';
+                    cell.style.borderTop = 'none';
+                    cell.style.borderRight = 'none';
+                    cell.style.borderBottom = 'none';
+                    cell.style.borderLeft = 'none';
+                    cell.setAttribute('data-border-style', 'none');
                 }
 
                 colCursor += colspan;
@@ -2820,18 +2820,17 @@ class MouPageView {
         const isMou = (state.documentType === 'mou');
         const showLogos = isMou && isFirstPage && (state.showHeaderLogos !== false);
 
-        // Bounded header space (MS Word standard Kop Surat boundary: 28mm, max 35mm)
-        const requiredHeaderHeightMm = showLogos ? 28.0 : 14.0;
+        // Bounded header space (MS Word standard Kop Surat boundary: 22mm, max 32mm)
+        const requiredHeaderHeightMm = showLogos ? 22.0 : 12.0;
 
         this.headerEl.style.minHeight = `${requiredHeaderHeightMm}mm`;
-        this.headerEl.style.maxHeight = '35mm';
-        const bodyTopGapMm = Math.max(2, state.marginTopMm - state.headerDistanceMm);
-        this.headerEl.style.marginBottom = `${bodyTopGapMm}mm`;
+        this.headerEl.style.maxHeight = '32mm';
+        this.headerEl.style.marginBottom = '3mm';
 
         const headerWrapper = document.getElementById('mouHeaderZoneWrapper');
         if (headerWrapper) {
             headerWrapper.style.minHeight = `${requiredHeaderHeightMm}mm`;
-            headerWrapper.style.maxHeight = '35mm';
+            headerWrapper.style.maxHeight = '32mm';
         }
         if (!this.headerEl.contains(headerWrapper)) {
             if (isMou && showLogos) {
@@ -2973,7 +2972,7 @@ class MouPageView {
             this.headerLogosLayer.classList.remove('is-header-active');
         }
 
-        const topHeaderMm = Math.max(8, (state.marginTopMm || 25.4) - 10);
+        const topHeaderMm = Math.max(8, (state.marginTopMm || 25.4) - 12);
         const compLogoUrl = state.mediaAssets?.company_logo || state.mediaAssets?.company_logo_url || '/images/mou/seven-inc-logo.png';
         const instLogoUrl = state.mediaAssets?.institution_logo || state.mediaAssets?.institution_logo_url || '/images/mou/institution-logo-placeholder.png';
 
@@ -7306,13 +7305,12 @@ export function initMouWordProcessor(config) {
 
             const isMou = (state.documentType === 'mou');
             const showLogos = isMou && isFirstPage && (state.showHeaderLogos !== false);
-            const requiredHeaderHeightMm = showLogos ? 28.0 : 14.0;
+            const requiredHeaderHeightMm = showLogos ? 22.0 : 12.0;
 
             if (headerEl) {
                 headerEl.style.minHeight = `${requiredHeaderHeightMm}mm`;
-                headerEl.style.maxHeight = '35mm';
-                const bodyTopGapMm = Math.max(2, state.marginTopMm - state.headerDistanceMm);
-                headerEl.style.marginBottom = `${bodyTopGapMm}mm`;
+                headerEl.style.maxHeight = '32mm';
+                headerEl.style.marginBottom = '3mm';
 
                 if (state.activeZone === 'header' && pageNum === state.activePageNum) {
                     if (headerWrapper && !headerEl.contains(headerWrapper)) {
@@ -8348,7 +8346,7 @@ export function initMouWordProcessor(config) {
                             institution: { width: 66, height: 66, rotation: 0, topOffsetMm: 0, leftOffsetMm: 0 },
                             company: { width: 66, height: 66, rotation: 0, topOffsetMm: 0, rightOffsetMm: 0 },
                         };
-                        const topHeaderMm = Math.max(10, state.marginTopMm - 10);
+                        const topHeaderMm = Math.max(8, (state.marginTopMm || 25.4) - 12);
                         const compLogoUrl = state.mediaAssets?.company_logo || state.mediaAssets?.company_logo_url || '/images/mou/seven-inc-logo.png';
                         const instLogoUrl = state.mediaAssets?.institution_logo || state.mediaAssets?.institution_logo_url || '/images/mou/institution-logo-placeholder.png';
 
@@ -9791,13 +9789,22 @@ export function initMouWordProcessor(config) {
             let targetTable = null;
             let tablePos = null;
             let tableDepth = -1;
-            for (let d = $from.depth; d >= 0; d--) {
-                const n = $from.node(d);
-                if (n.type.name === 'table') {
-                    targetTable = n;
-                    tablePos = $from.before(d);
-                    tableDepth = d;
-                    break;
+
+            if (selection.node && selection.node.type && selection.node.type.name === 'table') {
+                targetTable = selection.node;
+                tablePos = selection.from;
+            } else if (selection.$from && selection.$from.nodeAfter && selection.$from.nodeAfter.type && selection.$from.nodeAfter.type.name === 'table') {
+                targetTable = selection.$from.nodeAfter;
+                tablePos = selection.$from.pos;
+            } else {
+                for (let d = $from.depth; d >= 0; d--) {
+                    const n = $from.node(d);
+                    if (n.type.name === 'table') {
+                        targetTable = n;
+                        tablePos = $from.before(d);
+                        tableDepth = d;
+                        break;
+                    }
                 }
             }
             if (!targetTable || tablePos === null) return;
@@ -9989,11 +9996,18 @@ export function initMouWordProcessor(config) {
             }
 
             if (borderType === 'none' || borderType === 'borderless') {
+                const cleanedRawStyle = (targetTable.attrs.rawStyle || '')
+                    .split(';')
+                    .map(s => s.trim())
+                    .filter(s => s && !/^border(-[a-z]+)?\s*:/i.test(s))
+                    .join('; ');
+
                 tr.setNodeMarkup(tablePos, undefined, {
                     ...targetTable.attrs,
                     class: 'mou-table-borderless',
                     tableStyle: 'borderless',
                     'data-table-style': 'borderless',
+                    rawStyle: cleanedRawStyle,
                 });
                 let rOffset = tablePos + 1;
                 for (let r = 0; r < totalRows; r++) {

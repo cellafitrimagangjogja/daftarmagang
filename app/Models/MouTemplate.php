@@ -547,17 +547,18 @@ HTML;
     {
         return <<<'HTML'
 <div class="mou-document mou-doc-canvas">
-    <p style="text-align: center; margin-bottom: 6pt;"><strong>NOTA KESEPAHAMAN</strong></p>
-    <p style="text-align: center; margin-bottom: 6pt;"><strong>ANTARA</strong></p>
+    <p style="text-align: center; margin-bottom: 2pt;"><strong>NOTA KESEPAHAMAN</strong></p>
+    <p style="text-align: center; margin-bottom: 2pt;"><strong>ANTARA</strong></p>
     <p style="text-align: center; text-transform: uppercase; margin-bottom: 2pt;"><strong>[institution_name]</strong></p>
-    <p style="text-align: center; text-transform: uppercase; margin-bottom: 8pt;"><strong>DENGAN [company_name]</strong></p>
+    <p style="text-align: center; margin-bottom: 2pt;"><strong>DENGAN</strong></p>
+    <p style="text-align: center; text-transform: uppercase; margin-bottom: 4pt;"><strong>[company_name]</strong></p>
     <p style="text-align: center; margin-bottom: 2pt;"><strong>TENTANG</strong></p>
     <p style="text-align: center; margin-bottom: 4pt;"><strong>PELAKSANAAN TRI DHARMA PERGURUAN TINGGI</strong></p>
-    <p style="text-align: center; margin-bottom: 12pt;"><strong>NOMOR: [company_mou_number]</strong></p>
+    <p style="text-align: center; margin-bottom: 8pt;"><strong>NOMOR: [company_mou_number]</strong></p>
 
-    <p style="text-align: justify; margin-bottom: 8pt;">Pada hari ini, [agreement_day], [agreement_date_words] ([agreement_date_short]), bertempat di [agreement_place], yang bertanda tangan di bawah ini :</p>
+    <p style="text-align: justify; margin-bottom: 6pt;">Pada hari ini, [agreement_day], [agreement_date_words] ([agreement_date_short]), bertempat di [agreement_place], yang bertanda tangan di bawah ini:</p>
 
-    <table class="mou-table-borderless" data-table-style="borderless" data-table-width="100%" style="width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 10pt;">
+    <table class="mou-table-borderless" data-table-style="borderless" data-table-width="100%" style="width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 6pt;">
         <colgroup>
             <col width="24" style="width: 24px">
             <col width="190" style="width: 190px">
@@ -575,38 +576,40 @@ HTML;
                 <td colwidth="24" data-cell-width="4%" style="width: 4%; vertical-align: top; padding-right: 0; white-space: nowrap;"><p style="margin: 0;">2.</p></td>
                 <td colwidth="190" data-cell-width="31%" style="width: 31%; vertical-align: top; padding-left: 2pt; word-break: normal; overflow-wrap: break-word;"><p style="margin: 0;"><strong>[company_signatory_name]</strong></p></td>
                 <td colwidth="16" data-cell-width="3%" style="width: 3%; vertical-align: top; text-align: center; white-space: nowrap;"><p style="text-align: center; margin: 0;">:</p></td>
-                <td colwidth="370" data-cell-width="62%" style="width: 62%; vertical-align: top; text-align: justify; word-break: normal; overflow-wrap: break-word;"><p style="text-align: justify; margin: 0;">[company_signatory_title] [company_name], Berkedudukan di [company_address], oleh karena itu sah mewakili dan bertindak untuk dan atas nama [company_name], selanjutnya disebut <strong>PIHAK KEDUA</strong>.</p></td>
+                <td colwidth="370" data-cell-width="62%" style="width: 62%; vertical-align: top; text-align: justify; word-break: normal; overflow-wrap: break-word;"><p style="text-align: justify; margin: 0;">[company_signatory_title] [company_name], berkedudukan di [company_address], oleh karena itu sah mewakili dan bertindak untuk dan atas nama [company_name], selanjutnya disebut <strong>PIHAK KEDUA</strong>.</p></td>
             </tr>
         </tbody>
     </table>
 
-    <p style="text-align: justify; margin-bottom: 6pt;"><strong>PIHAK KESATU</strong> dan <strong>PIHAK KEDUA</strong> untuk selanjutnya secara bersama-sama disebut <strong>PARA PIHAK</strong>.</p>
-    <p style="text-align: justify; margin-bottom: 10pt;"><strong>PARA PIHAK</strong> bersepakat untuk mengadakan kerja sama dalam bidang pendidikan, penelitian, pengabdian kepada masyarakat, dan pengembangan sumber daya dengan ketentuan sebagai berikut.</p>
+    <p style="text-align: justify; margin-bottom: 4pt;"><strong>PIHAK KESATU</strong> dan <strong>PIHAK KEDUA</strong> untuk selanjutnya secara bersama-sama disebut <strong>PARA PIHAK</strong>.</p>
+    <p style="text-align: justify; margin-bottom: 6pt;"><strong>PARA PIHAK</strong> bersepakat untuk mengadakan kerja sama dalam bidang pendidikan, penelitian, pengabdian kepada masyarakat, dan pengembangan sumber daya dengan ketentuan sebagai berikut.</p>
 
-    <p style="text-align: center; margin-top: 10pt; margin-bottom: 0pt;"><strong>Pasal 1</strong></p>
-    <p style="text-align: center; margin-bottom: 4pt;"><strong>MAKSUD DAN TUJUAN</strong></p>
-    <p style="text-align: justify; margin-left: 24pt; text-indent: -24pt; margin-bottom: 4pt;"><strong>(1)</strong> Maksud Nota Kesepahaman ini adalah sebagai landasan dalam rangka pelaksanaan kerja sama yang akan disusun oleh <strong>PARA PIHAK</strong> sesuai dengan ruang lingkup Nota Kesepahaman ini.</p>
-    <p style="text-align: justify; margin-left: 24pt; text-indent: -24pt; margin-bottom: 8pt;"><strong>(2)</strong> Tujuan Nota Kesepahaman ini adalah untuk saling mendukung kegiatan <strong>PARA PIHAK</strong> dalam rangka kerja sama yang berkaitan dengan bidang bidang pendidikan, penelitian, pengabdian kepada masyarakat, dan pengembangan sumber daya.</p>
+    <p style="text-align: center; margin-top: 6pt; margin-bottom: 0pt;"><strong>Pasal 1</strong></p>
+    <p style="text-align: center; margin-bottom: 3pt;"><strong>MAKSUD DAN TUJUAN</strong></p>
+    <p style="text-align: justify; margin-left: 24pt; text-indent: -24pt; margin-bottom: 3pt;"><strong>(1)</strong> Maksud Nota Kesepahaman ini adalah sebagai landasan dalam rangka pelaksanaan kerja sama yang akan disusun oleh <strong>PARA PIHAK</strong> sesuai dengan ruang lingkup Nota Kesepahaman ini.</p>
+    <p style="text-align: justify; margin-left: 24pt; text-indent: -24pt; margin-bottom: 4pt;"><strong>(2)</strong> Tujuan Nota Kesepahaman ini adalah untuk saling mendukung kegiatan <strong>PARA PIHAK</strong> dalam rangka kerja sama yang berkaitan dengan bidang pendidikan, penelitian, pengabdian kepada masyarakat, dan pengembangan sumber daya.</p>
 
-    <p style="text-align: center; margin-top: 10pt; margin-bottom: 0pt;"><strong>Pasal 2</strong></p>
-    <p style="text-align: center; margin-bottom: 4pt;"><strong>RUANG LINGKUP</strong></p>
-    <p style="text-align: justify; margin-bottom: 8pt;">Ruang lingkup kerja sama ini meliputi bidang pendidikan, penelitian, pengabdian kepada masyarakat, dan pengembangan sumber daya <strong>PARA PIHAK</strong>.</p>
+    <div class="mou-page-break" data-page-break="true" style="page-break-after: always; break-after: page;"></div>
 
-    <p style="text-align: center; margin-top: 10pt; margin-bottom: 0pt;"><strong>Pasal 3</strong></p>
-    <p style="text-align: center; margin-bottom: 4pt;"><strong>PELAKSANAAN KEGIATAN</strong></p>
-    <p style="text-align: justify; margin-bottom: 8pt;">Pelaksanaan kegiatan yang merupakan tindak lanjut dari Nota Kesepahaman ini akan diatur dalam Perjanjian Kerja Sama melalui pejabat yang ditunjuk dan diberi kewenangan oleh <strong>PARA PIHAK</strong>.</p>
+    <p style="text-align: center; margin-top: 2pt; margin-bottom: 0pt;"><strong>Pasal 2</strong></p>
+    <p style="text-align: center; margin-bottom: 3pt;"><strong>RUANG LINGKUP</strong></p>
+    <p style="text-align: justify; margin-bottom: 6pt;">Ruang lingkup kerja sama ini meliputi bidang pendidikan, penelitian, pengabdian kepada masyarakat, dan pengembangan sumber daya <strong>PARA PIHAK</strong>.</p>
 
-    <p style="text-align: center; margin-top: 10pt; margin-bottom: 0pt;"><strong>Pasal 4</strong></p>
-    <p style="text-align: center; margin-bottom: 4pt;"><strong>PEMBIAYAAN</strong></p>
-    <p style="text-align: justify; margin-bottom: 8pt;">Pembiayaan yang berhubungan dengan tindak lanjut Nota Kesepahaman ini ditetapkan bersama sesuai dengan kebutuhan yang disepakati oleh <strong>PARA PIHAK</strong>. dan dituangkan dalam Perjanjian Kerja Sama.</p>
+    <p style="text-align: center; margin-top: 6pt; margin-bottom: 0pt;"><strong>Pasal 3</strong></p>
+    <p style="text-align: center; margin-bottom: 3pt;"><strong>PELAKSANAAN KEGIATAN</strong></p>
+    <p style="text-align: justify; margin-bottom: 6pt;">Pelaksanaan kegiatan yang merupakan tindak lanjut dari Nota Kesepahaman ini akan diatur dalam Perjanjian Kerja Sama melalui pejabat yang ditunjuk dan diberi kewenangan oleh <strong>PARA PIHAK</strong>.</p>
 
-    <p style="text-align: center; margin-top: 10pt; margin-bottom: 0pt;"><strong>Pasal 5</strong></p>
-    <p style="text-align: center; margin-bottom: 4pt;"><strong>KORESPONDENSI</strong></p>
-    <p style="text-align: justify; margin-left: 24pt; text-indent: -24pt; margin-bottom: 6pt;"><strong>(1)</strong> semua pemberitahuan, permintaan dan atau usulan yang dibuat sehubungan dengan Nota Kesepahaman ini harus dilakukan secara tertulis dan diserahkan secara langsung, melalui pos, email, atau melalui faksimili kepada masing masing <strong>PIHAK</strong> yang alamatnya disebutkan dibawah ini.</p>
+    <p style="text-align: center; margin-top: 6pt; margin-bottom: 0pt;"><strong>Pasal 4</strong></p>
+    <p style="text-align: center; margin-bottom: 3pt;"><strong>PEMBIAYAAN</strong></p>
+    <p style="text-align: justify; margin-bottom: 6pt;">Pembiayaan yang berhubungan dengan tindak lanjut Nota Kesepahaman ini ditetapkan bersama sesuai dengan kebutuhan yang disepakati oleh <strong>PARA PIHAK</strong> dan dituangkan dalam Perjanjian Kerja Sama.</p>
 
-    <p style="margin-left: 24pt; text-indent: -24pt; margin-top: 6pt; margin-bottom: 2pt;"><strong>a.&nbsp; PIHAK KESATU</strong></p>
+    <p style="text-align: center; margin-top: 6pt; margin-bottom: 0pt;"><strong>Pasal 5</strong></p>
+    <p style="text-align: center; margin-bottom: 3pt;"><strong>KORESPONDENSI</strong></p>
+    <p style="text-align: justify; margin-left: 24pt; text-indent: -24pt; margin-bottom: 4pt;"><strong>(1)</strong> Semua pemberitahuan, permintaan dan/atau usulan yang dibuat sehubungan dengan Nota Kesepahaman ini harus dilakukan secara tertulis dan diserahkan secara langsung, melalui pos, email, atau melalui faksimili kepada masing-masing <strong>PIHAK</strong> yang alamatnya disebutkan di bawah ini.</p>
 
-    <table class="mou-table-borderless mou-correspondence-table" data-table-style="borderless" data-table-width="100%" style="width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 2pt; margin-bottom: 6pt;">
+    <p style="margin-left: 24pt; text-indent: -24pt; margin-top: 4pt; margin-bottom: 2pt;"><strong>a.&nbsp; PIHAK KESATU</strong></p>
+
+    <table class="mou-table-borderless mou-correspondence-table" data-table-style="borderless" data-table-width="100%" style="width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 1pt; margin-bottom: 4pt;">
         <colgroup>
             <col style="width: 20%;">
             <col style="width: 3%;">
@@ -614,41 +617,41 @@ HTML;
         </colgroup>
         <tbody>
             <tr>
-                <td colwidth="120" style="width: 20%; padding: 1.5pt 4pt 1.5pt 24pt; vertical-align: top;"><p style="margin: 0;">Instansi</p></td>
-                <td colwidth="20" style="width: 3%; padding: 1.5pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
-                <td colwidth="460" style="width: 77%; padding: 1.5pt 4pt; vertical-align: top;"><p style="margin: 0;">[institution_name]</p></td>
+                <td colwidth="120" style="width: 20%; padding: 1pt 4pt 1pt 24pt; vertical-align: top;"><p style="margin: 0;">Instansi</p></td>
+                <td colwidth="20" style="width: 3%; padding: 1pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
+                <td colwidth="460" style="width: 77%; padding: 1pt 4pt; vertical-align: top;"><p style="margin: 0;">[institution_name]</p></td>
             </tr>
             <tr>
-                <td colwidth="120" style="width: 20%; padding: 1.5pt 4pt 1.5pt 24pt; vertical-align: top;"><p style="margin: 0;">Alamat</p></td>
-                <td colwidth="20" style="width: 3%; padding: 1.5pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
-                <td colwidth="460" style="width: 77%; padding: 1.5pt 4pt; vertical-align: top;"><p style="margin: 0;">[institution_address]</p></td>
+                <td colwidth="120" style="width: 20%; padding: 1pt 4pt 1pt 24pt; vertical-align: top;"><p style="margin: 0;">Alamat</p></td>
+                <td colwidth="20" style="width: 3%; padding: 1pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
+                <td colwidth="460" style="width: 77%; padding: 1pt 4pt; vertical-align: top;"><p style="margin: 0;">[institution_address]</p></td>
             </tr>
             <tr>
-                <td colwidth="120" style="width: 20%; padding: 1.5pt 4pt 1.5pt 24pt; vertical-align: top;"><p style="margin: 0;">U.p</p></td>
-                <td colwidth="20" style="width: 3%; padding: 1.5pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
-                <td colwidth="460" style="width: 77%; padding: 1.5pt 4pt; vertical-align: top;"><p style="margin: 0;">[institution_correspondence_unit]</p></td>
+                <td colwidth="120" style="width: 20%; padding: 1pt 4pt 1pt 24pt; vertical-align: top;"><p style="margin: 0;">U.p.</p></td>
+                <td colwidth="20" style="width: 3%; padding: 1pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
+                <td colwidth="460" style="width: 77%; padding: 1pt 4pt; vertical-align: top;"><p style="margin: 0;">[institution_correspondence_unit]</p></td>
             </tr>
             <tr>
-                <td colwidth="120" style="width: 20%; padding: 1.5pt 4pt 1.5pt 24pt; vertical-align: top;"><p style="margin: 0;">Telepon</p></td>
-                <td colwidth="20" style="width: 3%; padding: 1.5pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
-                <td colwidth="460" style="width: 77%; padding: 1.5pt 4pt; vertical-align: top;"><p style="margin: 0;">[institution_phone]</p></td>
+                <td colwidth="120" style="width: 20%; padding: 1pt 4pt 1pt 24pt; vertical-align: top;"><p style="margin: 0;">Telepon</p></td>
+                <td colwidth="20" style="width: 3%; padding: 1pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
+                <td colwidth="460" style="width: 77%; padding: 1pt 4pt; vertical-align: top;"><p style="margin: 0;">[institution_phone]</p></td>
             </tr>
             <tr>
-                <td colwidth="120" style="width: 20%; padding: 1.5pt 4pt 1.5pt 24pt; vertical-align: top;"><p style="margin: 0;">Fax</p></td>
-                <td colwidth="20" style="width: 3%; padding: 1.5pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
-                <td colwidth="460" style="width: 77%; padding: 1.5pt 4pt; vertical-align: top;"><p style="margin: 0;">[institution_fax]</p></td>
+                <td colwidth="120" style="width: 20%; padding: 1pt 4pt 1pt 24pt; vertical-align: top;"><p style="margin: 0;">Fax</p></td>
+                <td colwidth="20" style="width: 3%; padding: 1pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
+                <td colwidth="460" style="width: 77%; padding: 1pt 4pt; vertical-align: top;"><p style="margin: 0;">[institution_fax]</p></td>
             </tr>
             <tr>
-                <td colwidth="120" style="width: 20%; padding: 1.5pt 4pt 1.5pt 24pt; vertical-align: top;"><p style="margin: 0;">Email</p></td>
-                <td colwidth="20" style="width: 3%; padding: 1.5pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
-                <td colwidth="460" style="width: 77%; padding: 1.5pt 4pt; vertical-align: top;"><p style="margin: 0;">[institution_email]</p></td>
+                <td colwidth="120" style="width: 20%; padding: 1pt 4pt 1pt 24pt; vertical-align: top;"><p style="margin: 0;">Email</p></td>
+                <td colwidth="20" style="width: 3%; padding: 1pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
+                <td colwidth="460" style="width: 77%; padding: 1pt 4pt; vertical-align: top;"><p style="margin: 0;">[institution_email]</p></td>
             </tr>
         </tbody>
     </table>
 
-    <p style="margin-left: 24pt; text-indent: -24pt; margin-top: 6pt; margin-bottom: 2pt;"><strong>b.&nbsp; PIHAK KEDUA</strong></p>
+    <p style="margin-left: 24pt; text-indent: -24pt; margin-top: 4pt; margin-bottom: 2pt;"><strong>b.&nbsp; PIHAK KEDUA</strong></p>
 
-    <table class="mou-table-borderless mou-correspondence-table" data-table-style="borderless" data-table-width="100%" style="width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 2pt; margin-bottom: 6pt;">
+    <table class="mou-table-borderless mou-correspondence-table" data-table-style="borderless" data-table-width="100%" style="width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 1pt; margin-bottom: 4pt;">
         <colgroup>
             <col style="width: 20%;">
             <col style="width: 3%;">
@@ -656,67 +659,69 @@ HTML;
         </colgroup>
         <tbody>
             <tr>
-                <td colwidth="120" style="width: 20%; padding: 1.5pt 4pt 1.5pt 24pt; vertical-align: top;"><p style="margin: 0;">Instansi</p></td>
-                <td colwidth="20" style="width: 3%; padding: 1.5pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
-                <td colwidth="460" style="width: 77%; padding: 1.5pt 4pt; vertical-align: top;"><p style="margin: 0;">[company_name]</p></td>
+                <td colwidth="120" style="width: 20%; padding: 1pt 4pt 1pt 24pt; vertical-align: top;"><p style="margin: 0;">Instansi</p></td>
+                <td colwidth="20" style="width: 3%; padding: 1pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
+                <td colwidth="460" style="width: 77%; padding: 1pt 4pt; vertical-align: top;"><p style="margin: 0;">[company_name]</p></td>
             </tr>
             <tr>
-                <td colwidth="120" style="width: 20%; padding: 1.5pt 4pt 1.5pt 24pt; vertical-align: top;"><p style="margin: 0;">Alamat</p></td>
-                <td colwidth="20" style="width: 3%; padding: 1.5pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
-                <td colwidth="460" style="width: 77%; padding: 1.5pt 4pt; vertical-align: top;"><p style="margin: 0;">[company_address]</p></td>
+                <td colwidth="120" style="width: 20%; padding: 1pt 4pt 1pt 24pt; vertical-align: top;"><p style="margin: 0;">Alamat</p></td>
+                <td colwidth="20" style="width: 3%; padding: 1pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
+                <td colwidth="460" style="width: 77%; padding: 1pt 4pt; vertical-align: top;"><p style="margin: 0;">[company_address]</p></td>
             </tr>
             <tr>
-                <td colwidth="120" style="width: 20%; padding: 1.5pt 4pt 1.5pt 24pt; vertical-align: top;"><p style="margin: 0;">U.p</p></td>
-                <td colwidth="20" style="width: 3%; padding: 1.5pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
-                <td colwidth="460" style="width: 77%; padding: 1.5pt 4pt; vertical-align: top;"><p style="margin: 0;">[company_correspondence_unit]</p></td>
+                <td colwidth="120" style="width: 20%; padding: 1pt 4pt 1pt 24pt; vertical-align: top;"><p style="margin: 0;">U.p.</p></td>
+                <td colwidth="20" style="width: 3%; padding: 1pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
+                <td colwidth="460" style="width: 77%; padding: 1pt 4pt; vertical-align: top;"><p style="margin: 0;">[company_correspondence_unit]</p></td>
             </tr>
             <tr>
-                <td colwidth="120" style="width: 20%; padding: 1.5pt 4pt 1.5pt 24pt; vertical-align: top;"><p style="margin: 0;">Telepon</p></td>
-                <td colwidth="20" style="width: 3%; padding: 1.5pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
-                <td colwidth="460" style="width: 77%; padding: 1.5pt 4pt; vertical-align: top;"><p style="margin: 0;">[company_phone]</p></td>
+                <td colwidth="120" style="width: 20%; padding: 1pt 4pt 1pt 24pt; vertical-align: top;"><p style="margin: 0;">Telepon</p></td>
+                <td colwidth="20" style="width: 3%; padding: 1pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
+                <td colwidth="460" style="width: 77%; padding: 1pt 4pt; vertical-align: top;"><p style="margin: 0;">[company_phone]</p></td>
             </tr>
             <tr>
-                <td colwidth="120" style="width: 20%; padding: 1.5pt 4pt 1.5pt 24pt; vertical-align: top;"><p style="margin: 0;">Fax</p></td>
-                <td colwidth="20" style="width: 3%; padding: 1.5pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
-                <td colwidth="460" style="width: 77%; padding: 1.5pt 4pt; vertical-align: top;"><p style="margin: 0;">[company_fax]</p></td>
+                <td colwidth="120" style="width: 20%; padding: 1pt 4pt 1pt 24pt; vertical-align: top;"><p style="margin: 0;">Fax</p></td>
+                <td colwidth="20" style="width: 3%; padding: 1pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
+                <td colwidth="460" style="width: 77%; padding: 1pt 4pt; vertical-align: top;"><p style="margin: 0;">[company_fax]</p></td>
             </tr>
             <tr>
-                <td colwidth="120" style="width: 20%; padding: 1.5pt 4pt 1.5pt 24pt; vertical-align: top;"><p style="margin: 0;">Email</p></td>
-                <td colwidth="20" style="width: 3%; padding: 1.5pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
-                <td colwidth="460" style="width: 77%; padding: 1.5pt 4pt; vertical-align: top;"><p style="margin: 0;">[company_email]</p></td>
+                <td colwidth="120" style="width: 20%; padding: 1pt 4pt 1pt 24pt; vertical-align: top;"><p style="margin: 0;">Email</p></td>
+                <td colwidth="20" style="width: 3%; padding: 1pt 2pt; text-align: center; vertical-align: top;"><p style="text-align: center; margin: 0;">:</p></td>
+                <td colwidth="460" style="width: 77%; padding: 1pt 4pt; vertical-align: top;"><p style="margin: 0;">[company_email]</p></td>
             </tr>
         </tbody>
     </table>
 
-    <p style="text-align: justify; margin-left: 24pt; text-indent: -24pt; margin-bottom: 8pt;"><strong>(2)</strong> Apabila terdapat perubahan alamat dan/atau data sebagaimana tercantum pada ayat (1) Pasal ini, Maka <strong>PIHAK</strong> yang mengubah alamat dan/atau data tersebut wajib memberitahukan secara tertulis atas perubahan tersebut dalam jangka waktu selambat-lambatnya 30 (tiga puluh) hari kalender kepada <strong>PIHAK</strong> lainnya sebelum alamat tersebut dinyatakan efektif. Apabila perubahan tersebut tidak diberitahukan maka korespondensi atau permintaan lainnya pada alamat terakhir yang diketahui oleh <strong>PIHAK</strong> lainnya dianggap telah diberikan dengan semestinya.</p>
+    <p style="text-align: justify; margin-left: 24pt; text-indent: -24pt; margin-bottom: 4pt;"><strong>(2)</strong> Apabila terdapat perubahan alamat dan/atau data sebagaimana tercantum pada ayat (1) Pasal ini, maka <strong>PIHAK</strong> yang mengubah alamat dan/atau data tersebut wajib memberitahukan secara tertulis atas perubahan tersebut dalam jangka waktu selambat-lambatnya 30 (tiga puluh) hari kalender kepada <strong>PIHAK</strong> lainnya sebelum alamat tersebut dinyatakan efektif. Apabila perubahan tersebut tidak diberitahukan maka korespondensi atau permintaan lainnya pada alamat terakhir yang diketahui oleh <strong>PIHAK</strong> lainnya dianggap telah diberikan dengan semestinya.</p>
 
-    <p style="text-align: center; margin-top: 10pt; margin-bottom: 0pt;"><strong>Pasal 6</strong></p>
-    <p style="text-align: center; margin-bottom: 4pt;"><strong>KETENTUAN LAIN-LAIN</strong></p>
-    <p style="text-align: justify; margin-bottom: 8pt;">Ketentuan dan/atau hal-hal lain yang belum diatur dalam Nota Kesepahaman ini diatur dalam bentuk addendum yang disepakati oleh <strong>PARA PIHAK</strong> dan merupakan bagian yang tidak terpisahkan dari Nota Kesepahaman ini.</p>
+    <div class="mou-page-break" data-page-break="true" style="page-break-after: always; break-after: page;"></div>
 
-    <p style="text-align: center; margin-top: 10pt; margin-bottom: 0pt;"><strong>Pasal 7</strong></p>
-    <p style="text-align: center; margin-bottom: 4pt;"><strong>PENUTUP</strong></p>
-    <p style="text-align: justify; margin-left: 24pt; text-indent: -24pt; margin-bottom: 4pt;"><strong>(1)</strong> Nota Kesepahaman ini dibuat rangkap dua, bermaterai cukup dan memiliki kekuatan hukum yang sama.</p>
-    <p style="text-align: justify; margin-left: 24pt; text-indent: -24pt; margin-bottom: 4pt;"><strong>(2)</strong> Nota Kesepahaman ini berlaku sejak tanggal ditandatangani untuk jangka waktu [agreement_duration] dan dapat diperpanjang atas persetujuan <strong>PARA PIHAK</strong>.</p>
-    <p style="text-align: justify; margin-left: 24pt; text-indent: -24pt; margin-bottom: 10pt;"><strong>(3)</strong> Apabila terjadi perselisihan, perbedaan penafsiran terhadap Nota Kesepahaman ini, atau hal-hal lain terkait yang belum secara tersurat dinyatakan dalam Nota Kesepahaman ini, akan diselesaikan secara musyawarah untuk mufakat.</p>
+    <p style="text-align: center; margin-top: 2pt; margin-bottom: 0pt;"><strong>Pasal 6</strong></p>
+    <p style="text-align: center; margin-bottom: 3pt;"><strong>KETENTUAN LAIN-LAIN</strong></p>
+    <p style="text-align: justify; margin-bottom: 6pt;">Ketentuan dan/atau hal-hal lain yang belum diatur dalam Nota Kesepahaman ini diatur dalam bentuk addendum yang disepakati oleh <strong>PARA PIHAK</strong> dan merupakan bagian yang tidak terpisahkan dari Nota Kesepahaman ini.</p>
 
-    <table class="mou-signature-table mou-table-borderless" data-table-style="borderless" data-table-width="100%" style="width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 24pt;">
+    <p style="text-align: center; margin-top: 6pt; margin-bottom: 0pt;"><strong>Pasal 7</strong></p>
+    <p style="text-align: center; margin-bottom: 3pt;"><strong>PENUTUP</strong></p>
+    <p style="text-align: justify; margin-left: 24pt; text-indent: -24pt; margin-bottom: 3pt;"><strong>(1)</strong> Nota Kesepahaman ini dibuat rangkap dua, bermeterai cukup dan memiliki kekuatan hukum yang sama.</p>
+    <p style="text-align: justify; margin-left: 24pt; text-indent: -24pt; margin-bottom: 3pt;"><strong>(2)</strong> Nota Kesepahaman ini berlaku sejak tanggal ditandatangani untuk jangka waktu [agreement_duration] dan dapat diperpanjang atas persetujuan <strong>PARA PIHAK</strong>.</p>
+    <p style="text-align: justify; margin-left: 24pt; text-indent: -24pt; margin-bottom: 6pt;"><strong>(3)</strong> Apabila terjadi perselisihan, perbedaan penafsiran terhadap Nota Kesepahaman ini, atau hal-hal lain terkait yang belum secara tersurat dinyatakan dalam Nota Kesepahaman ini, akan diselesaikan secara musyawarah untuk mufakat.</p>
+
+    <table class="mou-signature-table mou-table-borderless" data-table-style="borderless" data-table-width="100%" style="width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 14pt;">
         <colgroup>
             <col width="300" style="width: 300px">
             <col width="300" style="width: 300px">
         </colgroup>
         <tbody>
             <tr>
-                <td colwidth="300" data-cell-width="50%" style="width: 50%; text-align: center; font-weight: bold;"><p style="text-align: center; margin: 0;"><strong>PIHAK KESATU,</strong></p></td>
-                <td colwidth="300" data-cell-width="50%" style="width: 50%; text-align: center; font-weight: bold;"><p style="text-align: center; margin: 0;"><strong>PIHAK KEDUA,</strong></p></td>
+                <td colwidth="300" data-cell-width="50%" style="width: 50%; text-align: center;"><p style="text-align: center; margin: 0;"><strong>PIHAK KESATU,</strong></p><p style="text-align: center; margin: 0;"><strong>[institution_name]</strong></p></td>
+                <td colwidth="300" data-cell-width="50%" style="width: 50%; text-align: center;"><p style="text-align: center; margin: 0;"><strong>PIHAK KEDUA,</strong></p><p style="text-align: center; margin: 0;"><strong>[company_name]</strong></p></td>
             </tr>
-            <tr data-row-height="26mm" style="height: 26mm;">
-                <td colwidth="300" data-cell-width="50%" style="width: 50%; height: 26mm; text-align: center;"><p style="text-align: center; margin: 0;"></p></td>
-                <td colwidth="300" data-cell-width="50%" style="width: 50%; height: 26mm; text-align: center;"><p style="text-align: center; margin: 0;"></p></td>
+            <tr data-row-height="20mm" style="height: 20mm;">
+                <td colwidth="300" data-cell-width="50%" style="width: 50%; height: 20mm; text-align: center;"><p style="text-align: center; margin: 0;"></p></td>
+                <td colwidth="300" data-cell-width="50%" style="width: 50%; height: 20mm; text-align: center;"><p style="text-align: center; margin: 0;"></p></td>
             </tr>
             <tr>
-                <td colwidth="300" data-cell-width="50%" style="width: 50%; text-align: center; font-weight: bold;"><p style="text-align: center; margin: 0;"><strong>[institution_signatory_name]</strong></p></td>
-                <td colwidth="300" data-cell-width="50%" style="width: 50%; text-align: center; font-weight: bold;"><p style="text-align: center; margin: 0;"><strong>[company_signatory_name]</strong></p></td>
+                <td colwidth="300" data-cell-width="50%" style="width: 50%; text-align: center;"><p style="text-align: center; margin: 0;"><u><strong>[institution_signatory_name]</strong></u></p><p style="text-align: center; margin: 0;">[institution_signatory_title]</p></td>
+                <td colwidth="300" data-cell-width="50%" style="width: 50%; text-align: center;"><p style="text-align: center; margin: 0;"><u><strong>[company_signatory_name]</strong></u></p><p style="text-align: center; margin: 0;">[company_signatory_title]</p></td>
             </tr>
         </tbody>
     </table>

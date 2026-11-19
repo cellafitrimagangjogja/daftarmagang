@@ -1875,10 +1875,13 @@ ol.mou-list-upper-roman, ol[data-list-type="I"], .mou-doc-canvas ol.mou-list-upp
     box-sizing: border-box;
 }
 .mou-page-break {
-    page-break-before: always;
-    break-before: page;
+    page-break-after: always;
+    break-after: page;
     height: 0;
     margin: 0;
+    padding: 0;
+    line-height: 0;
+    font-size: 0;
     border: none;
 }
 CSS;
@@ -1935,7 +1938,7 @@ CSS;
 
             // Atur style tabel agar table-layout: fixed dan border sesuai gaya
             $tableBorderStyle = $isBorderless ? 'border: none;' : 'border: 1px solid #000000;';
-            $tableMargin = $isBorderless ? 'margin-top: 2pt; margin-bottom: 6pt;' : 'margin-top: 4pt; margin-bottom: 6pt;';
+            $tableMargin = $isBorderless ? 'margin-top: 1pt; margin-bottom: 3pt;' : 'margin-top: 2pt; margin-bottom: 4pt;';
             $tableHtml = preg_replace_callback('/<table\b([^>]*)>/i', function ($tm) use ($tableBorderStyle, $tableMargin) {
                 $attrs = $tm[1];
                 $newStyle = "width: 100%; border-collapse: collapse; table-layout: fixed; {$tableBorderStyle} {$tableMargin}";
@@ -1956,7 +1959,7 @@ CSS;
                 if (preg_match_all('/<td\b([^>]*)>([\s\S]*?)<\/td>/is', $rowContent, $tdMatches)) {
                     if (count($tdMatches[0]) === 1 && stripos($tdMatches[1][0], 'colspan') !== false) {
                         $bg = $isBorderless ? '' : 'background-color: #f8fafc;';
-                        return '<tr style="page-break-inside: avoid; break-inside: avoid;"><td colspan="3" style="' . $cellBorderStyle . ' ' . $cellRightBorder . ' padding: 2.5pt 6pt; font-weight: bold; ' . $bg . '">' . $tdMatches[2][0] . '</td></tr>';
+                        return '<tr style="page-break-inside: avoid; break-inside: avoid;"><td colspan="3" style="' . $cellBorderStyle . ' ' . $cellRightBorder . ' padding: 2pt 5pt; font-weight: bold; ' . $bg . '">' . $tdMatches[2][0] . '</td></tr>';
                     }
                     if (count($tdMatches[0]) === 3) {
                         $c0 = trim($tdMatches[2][0]);
@@ -1968,9 +1971,9 @@ CSS;
                         $w1 = $isBorderless ? '3%' : '4%';
                         $w2 = $isBorderless ? '77%' : '74%';
 
-                        $td0 = '<td style="width: ' . $w0 . '; ' . $cellBorderStyle . ' padding: 1.5pt 4pt 1.5pt ' . $padLeft . '; vertical-align: top;">' . $c0 . '</td>';
-                        $td1 = '<td style="width: ' . $w1 . '; ' . $cellBorderStyle . ' padding: 1.5pt 2pt; text-align: center; vertical-align: top;">' . $c1 . '</td>';
-                        $td2 = '<td style="width: ' . $w2 . '; ' . $cellBorderStyle . ' ' . $cellRightBorder . ' padding: 1.5pt 4pt; vertical-align: top; word-break: break-word; overflow-wrap: break-word;">' . $c2 . '</td>';
+                        $td0 = '<td style="width: ' . $w0 . '; ' . $cellBorderStyle . ' padding: 0.8pt 4pt 0.8pt ' . $padLeft . '; vertical-align: top;">' . $c0 . '</td>';
+                        $td1 = '<td style="width: ' . $w1 . '; ' . $cellBorderStyle . ' padding: 0.8pt 2pt; text-align: center; vertical-align: top;">' . $c1 . '</td>';
+                        $td2 = '<td style="width: ' . $w2 . '; ' . $cellBorderStyle . ' ' . $cellRightBorder . ' padding: 0.8pt 4pt; vertical-align: top; word-break: break-word; overflow-wrap: break-word;">' . $c2 . '</td>';
 
                         return '<tr style="page-break-inside: avoid; break-inside: avoid;">' . $td0 . $td1 . $td2 . '</tr>';
                     }
@@ -2005,6 +2008,13 @@ CSS;
         $htmlWithBase64 = preg_replace('/<div[^>]*class="[^"]*mou-watermark-layer[^"]*"[^>]*>[\s\S]*?<\/div>\s*<\/div>/i', '', $htmlWithBase64);
         $htmlWithBase64 = preg_replace('/<div[^>]*class="[^"]*mou-watermark-fixed-header[^"]*"[^>]*>[\s\S]*?<\/div>/i', '', $htmlWithBase64);
         $htmlWithBase64 = preg_replace('/<img[^>]*class="[^"]*mou-watermark-logo-(?:left|right)[^"]*"[^>]*>/i', '', $htmlWithBase64);
+
+        // Normalisasi tag pemisah halaman (page break) agar konsisten page-break-after dan tidak memicu halaman kosong
+        $htmlWithBase64 = preg_replace(
+            '/<(?:div|hr)[^>]*class="[^"]*mou-page-break[^"]*"[^>]*><\/(?:div|hr)>|<(?:div|hr)[^>]*data-page-break="true"[^>]*><\/(?:div|hr)>|<hr[^>]*class="[^"]*mou-page-break[^"]*"[^>]*\/?>/i',
+            '<div class="mou-page-break" data-page-break="true" style="page-break-after: always; break-after: page; height: 0; line-height: 0; font-size: 0; margin: 0; padding: 0;"></div>',
+            $htmlWithBase64
+        );
 
         // Cegah orphan heading (Pasal X dan Judul Pasal terpisah dari naskah) pada render DomPDF
         $htmlWithBase64 = preg_replace_callback(

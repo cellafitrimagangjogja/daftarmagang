@@ -9,113 +9,304 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
   @vite(['resources/css/app.css', 'resources/js/app.js'])
   <style>
-    * { font-family: 'Inter', sans-serif; }
+    * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
+    html, body { margin:0; padding:0; }
+    body {
+      min-height:100vh;
+      background-color:#f0f7f3;
+      color:#1a1a1a;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding:24px 16px;
+      overflow-x:hidden;
+      position:relative;
+    }
+
+    /* === BACKGROUND BASE === */
+    .bg-pattern {
+      position:fixed;
+      inset:0;
+      z-index:0;
+      pointer-events:none;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(74,222,128,.16), transparent 42%),
+        radial-gradient(circle at 85% 80%, rgba(26,92,56,.12), transparent 45%),
+        linear-gradient(180deg, #f8faf9 0%, #e6f4ec 100%);
+    }
+
+    /* === PATTERN DARI FILE pattern.png === */
+    .bg-batik-image {
+      position:fixed;
+      inset:0;
+      z-index:0;
+      pointer-events:none;
+      opacity:.45;
+      background-image: url('{{ asset('images/assets/pattern.png') }}');
+      background-size: 420px 420px;
+      background-repeat: repeat;
+      background-position: center;
+      mask-image: radial-gradient(ellipse at center, #000 55%, transparent 95%);
+      -webkit-mask-image: radial-gradient(ellipse at center, #000 55%, transparent 95%);
+    }
+
+    /* === TINT HIJAU === */
+    .bg-batik-tint {
+      position:fixed;
+      inset:0;
+      z-index:0;
+      pointer-events:none;
+      background:linear-gradient(180deg,
+        rgba(26,92,56,.08) 0%,
+        rgba(74,222,128,.04) 50%,
+        rgba(15,68,35,.10) 100%);
+      mix-blend-mode:multiply;
+    }
+
+    /* === BLOB DEKORATIF === */
+    .deco-blob {
+      position:fixed;
+      border-radius:50%;
+      pointer-events:none;
+      z-index:0;
+      filter:blur(6px);
+    }
+
     input:focus { outline: none; }
+    .auth-card {
+      animation: cardIn .5s cubic-bezier(.2,.8,.2,1) both;
+    }
+    @keyframes cardIn {
+      from { opacity:0; transform: translateY(16px) scale(.98); }
+      to   { opacity:1; transform: translateY(0) scale(1); }
+    }
+    .field-input {
+      transition: border-color .18s, box-shadow .18s, background .18s;
+    }
+    .field-input:focus {
+      border-color:#1a5c38 !important;
+      box-shadow:0 0 0 4px rgba(26,92,56,.10);
+      background:#fff;
+    }
+    .field-input.error {
+      border-color:#ef4444 !important;
+    }
+    .field-input.error:focus {
+      box-shadow:0 0 0 4px rgba(239,68,68,.10);
+    }
+    .btn-primary {
+      transition: transform .15s, background .2s, box-shadow .2s;
+    }
+    .btn-primary:hover {
+      background:#0f4423;
+      box-shadow:0 8px 22px rgba(26,92,56,.28);
+      transform: translateY(-1px);
+    }
+    .btn-primary:active { transform: translateY(0); }
+    .brand-link:hover .brand-text { color:#1a5c38; }
+    .brand-text { transition: color .2s; }
+
+    /* === TOMBOL KEMBALI (FIXED POJOK KIRI ATAS) === */
+    .btn-back {
+      position:fixed;
+      top:20px;
+      left:20px;
+      z-index:50;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      background:rgba(255,255,255,.85);
+      backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
+      border:1px solid rgba(209,250,229,.95);
+      color:#1a5c38;
+      font-size:12.5px;
+      font-weight:600;
+      padding:9px 16px;
+      border-radius:100px;
+      text-decoration:none;
+      box-shadow:0 4px 16px rgba(26,92,56,.10);
+      transition: all .2s ease;
+    }
+    .btn-back:hover {
+      background:#fff;
+      border-color:#86efac;
+      color:#0f4423;
+      box-shadow:0 8px 24px rgba(26,92,56,.20);
+      transform: translateX(-3px);
+    }
+    .btn-back i {
+      font-size:11px;
+      transition: transform .2s ease;
+    }
+    .btn-back:hover i {
+      transform: translateX(-3px);
+    }
+
+    /* Responsif */
+    @media (max-width: 480px) {
+      .btn-back {
+        top:14px;
+        left:14px;
+        width:36px;
+        height:36px;
+        justify-content:center;
+        padding:0;
+      }
+      .btn-back span { display:none; }
+      .btn-back i { font-size:13px; }
+      .btn-back:hover { transform: none; }
+      .password-grid { grid-template-columns: 1fr !important; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .auth-card { animation:none; }
+    }
   </style>
 </head>
-<body style="background:#f8faf9; color:#1a1a1a; display:flex; justify-content:center; align-items:center; min-height:100vh;">
+<body>
 
-<div style="width:100%; max-width:440px; padding:20px;">
-  <div style="text-align:center; margin-bottom:30px;">
-    <a href="{{ route('home') }}" style="display:inline-flex; align-items:center; gap:10px; text-decoration:none;">
-      <div style="width:32px; height:32px; border-radius:8px; background:#1a5c38; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:14px;">IH</div>
-      <span style="font-weight:700; color:#1a1a1a; font-size:18px;">InternHub</span>
+{{-- Tombol Kembali — fixed pojok kiri atas --}}
+<a href="{{ route('home') }}" class="btn-back" aria-label="Kembali ke Beranda">
+  <i class="fas fa-arrow-left"></i>
+  <span>Kembali</span>
+</a>
+
+{{-- Background pattern --}}
+<div class="bg-pattern"></div>
+<div class="bg-batik-image"></div>
+<div class="bg-batik-tint"></div>
+
+{{-- Blob dekoratif --}}
+<div class="deco-blob" style="width:340px;height:340px;top:-120px;left:-100px;background:radial-gradient(circle,rgba(74,222,128,.24),transparent 70%);"></div>
+<div class="deco-blob" style="width:420px;height:420px;bottom:-160px;right:-140px;background:radial-gradient(circle,rgba(26,92,56,.18),transparent 70%);"></div>
+<div class="deco-blob" style="width:200px;height:200px;top:42%;right:8%;background:radial-gradient(circle,rgba(134,239,172,.24),transparent 70%);"></div>
+
+<div style="width:100%; max-width:440px; position:relative; z-index:1;">
+
+  {{-- Brand --}}
+  <div style="text-align:center; margin-bottom:28px;">
+    <a href="{{ route('home') }}" class="brand-link" style="display:inline-flex; align-items:center; gap:10px; text-decoration:none;">
+      <div style="width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg,#1a5c38,#0f4423); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:15px; box-shadow:0 6px 18px rgba(26,92,56,.30);">IH</div>
+      <span class="brand-text" style="font-weight:800; color:#111; font-size:19px; letter-spacing:-.02em;">InternHub</span>
     </a>
   </div>
 
-  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:20px;padding:32px;box-shadow:0 2px 12px rgba(0,0,0,.06);">
+  {{-- Card --}}
+  <div class="auth-card" style="background:rgba(255,255,255,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(209,250,229,.9);border-radius:22px;padding:34px 32px;box-shadow:0 16px 48px rgba(26,92,56,.14), 0 2px 8px rgba(0,0,0,.04);position:relative;overflow:hidden;">
+    {{-- Aksen gradient atas --}}
+    <div style="position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#1a5c38,#4ade80,#86efac,#1a5c38);"></div>
+
+    {{-- Header --}}
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;">
-      <div style="width:40px;height:40px;border-radius:10px;background:#f8faf9;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <i class="fas fa-user-plus" style="color:#1a5c38;font-size:14px;"></i>
+      <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid #d1fae5;">
+        <i class="fas fa-user-plus" style="color:#1a5c38;font-size:15px;"></i>
       </div>
       <div>
-        <div style="font-weight:700;color:#111;font-size:15px;">Daftar Baru</div>
-        <div style="color:#9ca3af;font-size:12px;">Buat akun magang</div>
+        <div style="font-weight:800;color:#111;font-size:16px;letter-spacing:-.01em;">Daftar Baru</div>
+        <div style="color:#9ca3af;font-size:12.5px;">Buat akun magang</div>
       </div>
     </div>
 
     @if(session('success'))
-      <div style="background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;font-size:13px;padding:10px 14px;border-radius:8px;margin-bottom:16px;">
-        {{ session('success') }}
+      <div style="display:flex;align-items:flex-start;gap:10px;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;font-size:13px;padding:11px 14px;border-radius:10px;margin-bottom:16px;">
+        <i class="fas fa-circle-check" style="margin-top:2px;color:#16a34a;"></i>
+        <span>{{ session('success') }}</span>
       </div>
     @endif
     @if($errors->any())
-      <div style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:13px;padding:10px 14px;border-radius:8px;margin-bottom:16px;">
-        @foreach($errors->all() as $err) <div>{{ $err }}</div> @endforeach
+      <div style="display:flex;align-items:flex-start;gap:10px;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:13px;padding:11px 14px;border-radius:10px;margin-bottom:16px;">
+        <i class="fas fa-circle-exclamation" style="margin-top:2px;color:#dc2626;"></i>
+        <div>
+          @foreach($errors->all() as $err) <div>{{ $err }}</div> @endforeach
+        </div>
       </div>
     @endif
 
     <form action="{{ route('user.register.submit') }}" method="POST">
       @csrf
 
+      {{-- Username --}}
       <div style="margin-bottom:14px;">
-        <label for="username" style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Username <span style="color:#ef4444;">*</span></label>
-        <input type="text" id="username" name="username" required value="{{ old('username') }}" placeholder="Masukkan username"
-               style="width:100%;padding:10px 14px;border:1.5px solid {{ $errors->has('username') ? '#ef4444' : '#e5e7eb' }};border-radius:10px;font-size:13px;color:#111;background:#fff;box-sizing:border-box;"
-               onfocus="this.style.borderColor='#1a5c38'" onblur="this.style.borderColor='{{ $errors->has('username') ? '#ef4444' : '#e5e7eb' }}'">
+        <label for="username" style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:7px;">Username <span style="color:#ef4444;">*</span></label>
+        <div style="position:relative;">
+          <i class="fas fa-user" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:13px;pointer-events:none;"></i>
+          <input type="text" id="username" name="username" required value="{{ old('username') }}" placeholder="Masukkan username"
+                 class="field-input {{ $errors->has('username') ? 'error' : '' }}"
+                 style="width:100%;padding:11px 14px 11px 38px;border:1.5px solid {{ $errors->has('username') ? '#ef4444' : '#e5e7eb' }};border-radius:11px;font-size:13.5px;color:#111;background:#fafbfb;">
+        </div>
         @error('username')
-          <p style="color:#dc2626;font-size:11px;margin-top:4px;margin-bottom:0;">{{ $message }}</p>
+          <p style="color:#dc2626;font-size:11.5px;margin-top:5px;margin-bottom:0;">{{ $message }}</p>
         @enderror
       </div>
 
+      {{-- Email --}}
       <div style="margin-bottom:14px;">
-        <label for="email" style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Email <span style="color:#ef4444;">*</span></label>
-        <input type="email" id="email" name="email" required value="{{ old('email') }}" placeholder="email@contoh.com"
-               style="width:100%;padding:10px 14px;border:1.5px solid {{ $errors->has('email') ? '#ef4444' : '#e5e7eb' }};border-radius:10px;font-size:13px;color:#111;background:#fff;box-sizing:border-box;"
-               onfocus="this.style.borderColor='#1a5c38'" onblur="this.style.borderColor='{{ $errors->has('email') ? '#ef4444' : '#e5e7eb' }}'">
+        <label for="email" style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:7px;">Email <span style="color:#ef4444;">*</span></label>
+        <div style="position:relative;">
+          <i class="fas fa-envelope" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:13px;pointer-events:none;"></i>
+          <input type="email" id="email" name="email" required value="{{ old('email') }}" placeholder="email@contoh.com"
+                 class="field-input {{ $errors->has('email') ? 'error' : '' }}"
+                 style="width:100%;padding:11px 14px 11px 38px;border:1.5px solid {{ $errors->has('email') ? '#ef4444' : '#e5e7eb' }};border-radius:11px;font-size:13.5px;color:#111;background:#fafbfb;">
+        </div>
         @error('email')
-          <p style="color:#dc2626;font-size:11px;margin-top:4px;margin-bottom:0;">{{ $message }}</p>
+          <p style="color:#dc2626;font-size:11.5px;margin-top:5px;margin-bottom:0;">{{ $message }}</p>
         @enderror
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
+      {{-- Password + Konfirmasi --}}
+      <div class="password-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
         <div>
-          <label for="password" style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Password <span style="color:#ef4444;">*</span></label>
+          <label for="password" style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:7px;">Password <span style="color:#ef4444;">*</span></label>
           <div style="position:relative;">
             <input type="password" id="password" name="password" required placeholder="Min. 8 karakter"
                    autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false"
-                   style="width:100%;padding:10px 38px 10px 14px;border:1.5px solid {{ $errors->has('password') ? '#ef4444' : '#e5e7eb' }};border-radius:10px;font-size:13px;box-sizing:border-box;"
-                   onfocus="this.style.borderColor='#1a5c38'" onblur="this.style.borderColor='{{ $errors->has('password') ? '#ef4444' : '#e5e7eb' }}'">
+                   class="field-input {{ $errors->has('password') ? 'error' : '' }}"
+                   style="width:100%;padding:11px 38px 11px 14px;border:1.5px solid {{ $errors->has('password') ? '#ef4444' : '#e5e7eb' }};border-radius:11px;font-size:13.5px;background:#fafbfb;">
             <button type="button" class="toggle-register-password-btn" onclick="toggleRegisterPasswords()" aria-label="Lihat password"
-                    style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;padding:0;cursor:pointer;color:#6b7280;display:flex;align-items:center;justify-content:center;">
+                    style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;padding:4px;cursor:pointer;color:#6b7280;display:flex;align-items:center;justify-content:center;border-radius:6px;">
               <svg class="eye-icon" style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
           </div>
           @error('password')
-            <p style="color:#dc2626;font-size:11px;margin-top:4px;margin-bottom:0;">{{ $message }}</p>
+            <p style="color:#dc2626;font-size:11.5px;margin-top:5px;margin-bottom:0;">{{ $message }}</p>
           @enderror
         </div>
         <div>
-          <label for="password_confirmation" style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Konfirmasi <span style="color:#ef4444;">*</span></label>
+          <label for="password_confirmation" style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:7px;">Konfirmasi <span style="color:#ef4444;">*</span></label>
           <div style="position:relative;">
             <input type="password" id="password_confirmation" name="password_confirmation" required placeholder="Ulangi password"
                    autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false"
-                   style="width:100%;padding:10px 38px 10px 14px;border:1.5px solid {{ $errors->has('password_confirmation') ? '#ef4444' : '#e5e7eb' }};border-radius:10px;font-size:13px;box-sizing:border-box;"
-                   onfocus="this.style.borderColor='#1a5c38'" onblur="this.style.borderColor='{{ $errors->has('password_confirmation') ? '#ef4444' : '#e5e7eb' }}'">
+                   class="field-input {{ $errors->has('password_confirmation') ? 'error' : '' }}"
+                   style="width:100%;padding:11px 38px 11px 14px;border:1.5px solid {{ $errors->has('password_confirmation') ? '#ef4444' : '#e5e7eb' }};border-radius:11px;font-size:13.5px;background:#fafbfb;">
             <button type="button" class="toggle-register-password-btn" onclick="toggleRegisterPasswords()" aria-label="Lihat password"
-                    style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;padding:0;cursor:pointer;color:#6b7280;display:flex;align-items:center;justify-content:center;">
+                    style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;padding:4px;cursor:pointer;color:#6b7280;display:flex;align-items:center;justify-content:center;border-radius:6px;">
               <svg class="eye-icon" style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
           </div>
           @error('password_confirmation')
-            <p style="color:#dc2626;font-size:11px;margin-top:4px;margin-bottom:0;">{{ $message }}</p>
+            <p style="color:#dc2626;font-size:11.5px;margin-top:5px;margin-bottom:0;">{{ $message }}</p>
           @enderror
         </div>
       </div>
-      <button type="submit"
-              style="width:100%;padding:13px;background:#145c30;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;transition:.2s;"
-              onmouseover="this.style.background='#1f2937'" onmouseout="this.style.background='#145c30'">
-        <i class="fas fa-user-plus" style="margin-right:8px;font-size:12px;"></i> Buat Akun & Daftar
+
+      <button type="submit" class="btn-primary"
+              style="width:100%;padding:13px;background:#145c30;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+        <i class="fas fa-user-plus" style="font-size:12px;"></i> Buat Akun & Daftar
       </button>
     </form>
-    
-    <div style="margin-top:20px;padding-top:20px;border-top:1px solid #f3f4f6;text-align:center;">
-      <p style="font-size:12px;color:#9ca3af;">Sudah punya akun?
-        <a href="{{ route('user.login') }}" style="color:#1a5c38;font-weight:600;text-decoration:none;">Masuk di sini</a>
+
+    <div style="margin-top:22px;padding-top:20px;border-top:1px solid #f3f4f6;text-align:center;">
+      <p style="font-size:12.5px;color:#9ca3af;margin:0;">Sudah punya akun?
+        <a href="{{ route('user.login') }}" style="color:#1a5c38;font-weight:700;text-decoration:none;transition:color .15s;" onmouseover="this.style.color='#0f4423'" onmouseout="this.style.color='#1a5c38'">Masuk di sini</a>
       </p>
     </div>
   </div>
+
+  {{-- Footer kecil --}}
+  <p style="text-align:center;font-size:11.5px;color:#9ca3af;margin-top:22px;">© {{ date('Y') }} InternHub — Program Magang Profesional Yogyakarta</p>
 </div>
+
 <script>
 function toggleRegisterPasswords() {
   const pw = document.getElementById('password');

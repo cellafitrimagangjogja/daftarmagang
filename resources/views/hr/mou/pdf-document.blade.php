@@ -61,7 +61,7 @@
 
         // Ruang khusus footer (Kotak Paraf / Footer Kustom & Nomor Halaman) yang otomatis membesar jika tabel Paraf diperbesar
         $reservedBottomMm = ($showParaf || $showPageNumber || $footerHtml !== '' || $firstPageFooterHtml !== '')
-            ? max(44.0, $bottomMm + 18.0, round($bottomMm + $effectiveFooterMm + 4.0, 2))
+            ? max(24.0, round($footerBottomOffsetMm + 5.0, 2))
             : $bottomMm;
         $paperSize = strtolower((string) ($pageConfig['paper_size'] ?? 'a4'));
         $orientation = strtolower((string) ($pageConfig['orientation'] ?? 'portrait'));

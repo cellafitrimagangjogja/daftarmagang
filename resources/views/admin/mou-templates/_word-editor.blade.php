@@ -856,8 +856,9 @@
         cursor: pointer;
         user-select: none;
         flex-shrink: 0;
-        min-height: 28mm;
-        max-height: 35mm;
+        min-height: 22mm;
+        max-height: 32mm;
+        margin-bottom: 3mm;
         box-sizing: border-box;
     }
     .mou-a4-page-footer {
@@ -1071,7 +1072,9 @@
     .ProseMirror table.mou-table-borderless td,
     .ProseMirror table.mou-table-borderless th,
     .ProseMirror table[data-table-style="borderless"] td,
-    .ProseMirror table[data-table-style="borderless"] th {
+    .ProseMirror table[data-table-style="borderless"] th,
+    .ProseMirror td[data-border-style="none"],
+    .ProseMirror th[data-border-style="none"] {
         border: none !important;
         border-right: none !important;
         border-left: none !important;
@@ -1079,26 +1082,26 @@
         border-bottom: none !important;
     }
 
-    .ProseMirror table.mou-table-bordered,
-    .ProseMirror table.mou-correspondence-table:not(.mou-table-borderless),
+    .ProseMirror table.mou-table-bordered:not(.mou-table-borderless):not([data-table-style="borderless"]),
+    .ProseMirror table.mou-correspondence-table:not(.mou-table-borderless):not([data-table-style="borderless"]),
     .ProseMirror table.mou-paraf-table,
-    table.mou-table-bordered,
-    table.mou-correspondence-table:not(.mou-table-borderless),
+    table.mou-table-bordered:not(.mou-table-borderless):not([data-table-style="borderless"]),
+    table.mou-correspondence-table:not(.mou-table-borderless):not([data-table-style="borderless"]),
     table.mou-paraf-table {
         border: 1px solid #000000 !important;
         border-collapse: collapse !important;
         box-sizing: border-box !important;
     }
-    .ProseMirror table.mou-table-bordered td,
-    .ProseMirror table.mou-table-bordered th,
-    .ProseMirror table.mou-correspondence-table:not(.mou-table-borderless) td,
-    .ProseMirror table.mou-correspondence-table:not(.mou-table-borderless) th,
+    .ProseMirror table.mou-table-bordered:not(.mou-table-borderless):not([data-table-style="borderless"]) td:not([data-border-style="none"]),
+    .ProseMirror table.mou-table-bordered:not(.mou-table-borderless):not([data-table-style="borderless"]) th:not([data-border-style="none"]),
+    .ProseMirror table.mou-correspondence-table:not(.mou-table-borderless):not([data-table-style="borderless"]) td:not([data-border-style="none"]),
+    .ProseMirror table.mou-correspondence-table:not(.mou-table-borderless):not([data-table-style="borderless"]) th:not([data-border-style="none"]),
     .ProseMirror table.mou-paraf-table td,
     .ProseMirror table.mou-paraf-table th,
-    table.mou-table-bordered td,
-    table.mou-table-bordered th,
-    table.mou-correspondence-table:not(.mou-table-borderless) td,
-    table.mou-correspondence-table:not(.mou-table-borderless) th,
+    table.mou-table-bordered:not(.mou-table-borderless):not([data-table-style="borderless"]) td:not([data-border-style="none"]),
+    table.mou-table-bordered:not(.mou-table-borderless):not([data-table-style="borderless"]) th:not([data-border-style="none"]),
+    table.mou-correspondence-table:not(.mou-table-borderless):not([data-table-style="borderless"]) td:not([data-border-style="none"]),
+    table.mou-correspondence-table:not(.mou-table-borderless):not([data-table-style="borderless"]) th:not([data-border-style="none"]),
     table.mou-paraf-table td,
     table.mou-paraf-table th {
         border: 1px solid #000000 !important;

@@ -491,7 +491,7 @@
         stage.className = 'mou-preview-sheet-logos-stage';
         stage.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; box-sizing: border-box;';
 
-        const topHeaderMm = Math.max(8, (marginTop || 25.4) - 10);
+        const topHeaderMm = Math.max(8, (marginTop || 25.4) - 12);
         const inst = cfg.institution || {};
         const comp = cfg.company || {};
 
@@ -540,7 +540,7 @@
         }
 
         const isFirstPage = (index === 1);
-        const requiredHeaderHeightMm = (isFirstPage && showHeaderLogos) ? 28.0 : 14.0;
+        const requiredHeaderHeightMm = (isFirstPage && showHeaderLogos) ? 22.0 : 12.0;
 
         const activeHeaderHtml = (differentFirstPage && index === 1) ? firstPageHeaderHtml : headerHtml;
         const activeFooterHtml = (differentFirstPage && index === 1 && firstPageFooterHtml !== '') ? firstPageFooterHtml : footerHtml;
@@ -551,9 +551,8 @@
             header = document.createElement('div');
             header.className = 'mou-a4-page-header mou-doc-canvas';
             header.style.minHeight = `${requiredHeaderHeightMm}mm`;
-            header.style.maxHeight = '35mm';
-            const headerGapMm = Math.max(2, (marginTop || 25.4) - (headerDist || 12));
-            header.style.marginBottom = `${headerGapMm}mm`;
+            header.style.maxHeight = '32mm';
+            header.style.marginBottom = '3mm';
             if (hasHeaderText) {
                 header.innerHTML = activeHeaderHtml;
             }

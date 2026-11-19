@@ -376,6 +376,10 @@
         $differentFirstPage = (bool) ($cfg['different_first_page'] ?? false);
         $showHeaderLogos = (bool) ($cfg['show_header_logos'] ?? true);
         $showWatermark   = (bool) ($cfg['show_watermark'] ?? false);
+        $headerDistance  = (float) ($cfg['header_distance_mm'] ?? 12.0);
+        $footerDistance  = (float) ($cfg['footer_distance_mm'] ?? 10.0);
+        $padTopMm        = min($headerDistance, $marginTop);
+        $headerLogosCfg  = $cfg['header_logos_config'] ?? null;
         $rawInstLogo = $mou->render_data_snapshot['institution_logo_path']
             ?? ($mou->institution?->logo_url ?: ($mou->institution?->logo ? ('/storage/' . $mou->institution->logo) : '/images/mou/institution-logo-placeholder.png'));
         $resolvedInstitutionLogo = \App\Services\MouDocumentRenderer::convertLocalPathToBase64($rawInstLogo) ?? $rawInstLogo;
@@ -619,10 +623,10 @@
             justify-content: space-between;
             overflow: hidden;
             color: #000000;
-            padding-top: var(--mou-margin-top, 25.4mm);
-            padding-right: var(--mou-margin-right, 25.4mm);
-            padding-bottom: var(--mou-margin-bottom, 25.4mm);
-            padding-left: var(--mou-margin-left, 25.4mm);
+            padding-top: var(--mou-pad-top, {{ $padTopMm }}mm);
+            padding-right: var(--mou-margin-right, {{ $marginRight }}mm);
+            padding-bottom: var(--mou-pad-bottom, 10mm);
+            padding-left: var(--mou-margin-left, {{ $marginLeft }}mm);
             font-family: var(--mou-font-family, 'Times New Roman', Times, serif);
             font-size: var(--mou-font-size, 12pt);
             line-height: var(--mou-line-height, 1.15);
@@ -768,8 +772,55 @@
         const showWatermark = @json($showWatermark);
         const resolvedInstitutionLogo = @json($resolvedInstitutionLogo);
         const resolvedCompanyLogo = @json($resolvedCompanyLogo);
+        const headerLogosCfg = @json($headerLogosCfg);
+        const marginTop = @json($marginTop);
+        const marginLeft = @json($marginLeft);
+        const marginRight = @json($marginRight);
+        const headerDist = @json($headerDistance);
 
         if (!sourceEl || !stageEl) return;
+
+        function renderShowSheetHeaderLogos(pageEl) {
+            if (!showHeaderLogos) return;
+            const cfg = headerLogosCfg || {
+                institution: { width: 66, height: 66, rotation: 0, topOffsetMm: 0, leftOffsetMm: 0 },
+                company: { width: 66, height: 66, rotation: 0, topOffsetMm: 0, rightOffsetMm: 0 },
+            };
+            const stage = document.createElement('div');
+            stage.className = 'mou-preview-sheet-logos-stage';
+            stage.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; box-sizing: border-box;';
+
+            const topHeaderMm = Math.max(8, (marginTop || 25.4) - 12);
+            const inst = cfg.institution || {};
+            const comp = cfg.company || {};
+
+            const clamp = (v, min, max, dflt) => {
+                const n = parseFloat(v);
+                return isNaN(n) ? dflt : Math.max(min, Math.min(max, n));
+            };
+
+            const instW = clamp(inst.width, 30, 105, 66);
+            const instH = clamp(inst.height, 30, 105, 66);
+            const instRot = inst.rotation || 0;
+            const instTop = topHeaderMm + clamp(inst.topOffsetMm, -4, 6, 0);
+            const instLeft = (marginLeft || 25.4) + clamp(inst.leftOffsetMm, -10, 45, 0);
+
+            const compW = clamp(comp.width, 30, 105, 66);
+            const compH = clamp(comp.height, 30, 105, 66);
+            const compRot = comp.rotation || 0;
+            const compTop = topHeaderMm + clamp(comp.topOffsetMm, -4, 6, 0);
+            const compRight = (marginRight || 25.4) + clamp(comp.rightOffsetMm, -10, 45, 0);
+
+            stage.innerHTML = `
+                <div style="position: absolute; top: ${instTop}mm; left: ${instLeft}mm; width: ${instW}px; height: ${instH}px; max-width: 105px; max-height: 105px;">
+                    <img src="${resolvedInstitutionLogo}" alt="Logo Institusi" style="width: 100%; height: 100%; object-fit: contain; ${instRot ? `transform: rotate(${instRot}deg); transform-origin: center center;` : ''}" />
+                </div>
+                <div style="position: absolute; top: ${compTop}mm; right: ${compRight}mm; width: ${compW}px; height: ${compH}px; max-width: 105px; max-height: 105px;">
+                    <img src="${resolvedCompanyLogo}" alt="Logo Seven Inc" style="width: 100%; height: 100%; object-fit: contain; ${compRot ? `transform: rotate(${compRot}deg); transform-origin: center center;` : ''}" />
+                </div>
+            `;
+            pageEl.appendChild(stage);
+        }
 
         // Zoom Handler dideklarasikan sebagai fungsi terhoist agar tersedia saat inisialisasi pagination
         function applyShowZoom(zoomVal) {
@@ -817,22 +868,15 @@
             page.className = 'mou-a4-page a4-container';
             page.style.position = 'relative';
 
-            if (index === 1 && showHeaderLogos) {
-                const wmLayer = document.createElement('div');
-                wmLayer.className = 'mou-watermark-layer';
-                wmLayer.innerHTML = `
-                    <div class="mou-watermark-fixed-header">
-                        <img src="${resolvedInstitutionLogo}" class="mou-watermark-logo-left" alt="Logo Institusi" />
-                        <img src="${resolvedCompanyLogo}" class="mou-watermark-logo-right" alt="Logo Seven Inc" />
-                    </div>
-                    ${showWatermark ? `<img src="${resolvedCompanyLogo}" class="mou-watermark-center" alt="Watermark" />` : ''}
-                `;
-                page.appendChild(wmLayer);
-            } else if (showWatermark) {
+            if (showWatermark) {
                 const wmLayer = document.createElement('div');
                 wmLayer.className = 'mou-watermark-layer';
                 wmLayer.innerHTML = `<img src="${resolvedCompanyLogo}" class="mou-watermark-center" alt="Watermark" />`;
                 page.appendChild(wmLayer);
+            }
+
+            if (index === 1 && showHeaderLogos) {
+                renderShowSheetHeaderLogos(page);
             }
 
             const activeHeaderHtml = (differentFirstPage && index === 1) ? firstPageHeaderHtml : headerHtml;
@@ -844,9 +888,10 @@
             if (hasHeaderText || (isFirstPage && showHeaderLogos)) {
                 header = document.createElement('div');
                 header.className = 'mou-a4-page-header mou-doc-canvas';
-                header.style.minHeight = (isFirstPage && showHeaderLogos) ? '28mm' : '14mm';
-                header.style.maxHeight = '35mm';
-                header.style.marginBottom = '2mm';
+                const requiredHeaderHeightMm = (isFirstPage && showHeaderLogos) ? 22.0 : 12.0;
+                header.style.minHeight = `${requiredHeaderHeightMm}mm`;
+                header.style.maxHeight = '32mm';
+                header.style.marginBottom = '3mm';
                 if (hasHeaderText) {
                     header.innerHTML = activeHeaderHtml;
                 }
