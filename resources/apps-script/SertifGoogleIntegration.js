@@ -300,7 +300,7 @@ function ensureSheetAndSyncHeaders(ss, tabName, schemaHeaders, headerRowIndex) {
 /**
  * Build mapped row values for sheet columns, strictly validating contract compatibility.
  */
-function buildRowValuesForSheet(actualHeaders, rowData, connectionKey, allowDynamicRegistrationCols) {
+function buildRowValuesForSheet(actualHeaders, rowData, connectionKey, allowDynamicRegistrationCols, syncId) {
   var isRegistration = (connectionKey === "registration");
   var expectedCols = isRegistration ? 38 : 21;
 
@@ -363,6 +363,13 @@ function buildRowValuesForSheet(actualHeaders, rowData, connectionKey, allowDyna
               break;
             }
           }
+        }
+      }
+
+      // Pastikan kolom SERTIF_SYNC_ID terisi nilai syncId yang valid (tidak boleh '-' jika syncId ada)
+      if (dCleanStr.toUpperCase() === "SERTIF_SYNC_ID" || (dSlot && dSlot.dbKey === "SERTIF_SYNC_ID")) {
+        if (dVal === undefined || dVal === null || dVal === "" || dVal === "-") {
+          dVal = syncId || (rowData ? (rowData.SERTIF_SYNC_ID || rowData.sync_id) : "-");
         }
       }
 
@@ -963,12 +970,14 @@ function handleUpsertRowAction(payload) {
     // Read headers on the designated header row (Row 12 for Registration, Row 1 for Follow-Up)
     var actualHeaders = sheet.getRange(headerRowIndex, 1, 1, lastCol).getValues()[0];
     var syncIdColIndex = -1;
+    var regIdColIndex = -1;
 
     for (var i = 0; i < actualHeaders.length; i++) {
-      var hClean = actualHeaders[i].toString().trim();
-      if (hClean.toUpperCase() === "SERTIF_SYNC_ID") {
+      var hClean = actualHeaders[i].toString().trim().toUpperCase();
+      if (hClean === "SERTIF_SYNC_ID") {
         syncIdColIndex = i + 1; // 1-based index
-        break;
+      } else if (hClean === "SERTIF_REGISTRATION_ID") {
+        regIdColIndex = i + 1;
       }
     }
 
@@ -983,7 +992,7 @@ function handleUpsertRowAction(payload) {
     }
 
     // Map row values and strictly validate schema compatibility against contract
-    var mappingResult = buildRowValuesForSheet(actualHeaders, rowData, connectionKey, autoSyncHeaders);
+    var mappingResult = buildRowValuesForSheet(actualHeaders, rowData, connectionKey, autoSyncHeaders, syncId);
     if (mappingResult.error) {
       return createJsonResponse({
         success: false,
@@ -1002,20 +1011,62 @@ function handleUpsertRowAction(payload) {
     if (numDataRows > 0) {
       var syncIdValues = sheet.getRange(headerRowIndex + 1, syncIdColIndex, numDataRows, 1).getValues();
       for (var r = 0; r < syncIdValues.length; r++) {
-        if (syncIdValues[r][0].toString().trim() === syncId) {
+        var existingSyncVal = syncIdValues[r][0].toString().trim();
+        if (existingSyncVal === syncId) {
           matchingRows.push(headerRowIndex + 1 + r);
         }
       }
     }
 
+    // Fallback pencarian baris cerdas jika SERTIF_SYNC_ID belum terpasang (misal cell bernilai '-' atau baru disinkron)
+    if (matchingRows.length === 0 && numDataRows > 0) {
+      // 1. Coba cari berdasarkan SERTIF_REGISTRATION_ID jika ada
+      var payloadRegId = (rowData["SERTIF_REGISTRATION_ID"] || rowData["sertif_registration_id"] || "").toString().trim();
+      if (regIdColIndex > 0 && payloadRegId !== "" && payloadRegId !== "-") {
+        var regIdValues = sheet.getRange(headerRowIndex + 1, regIdColIndex, numDataRows, 1).getValues();
+        for (var ri = 0; ri < regIdValues.length; ri++) {
+          if (regIdValues[ri][0].toString().trim() === payloadRegId) {
+            matchingRows.push(headerRowIndex + 1 + ri);
+          }
+        }
+      }
+
+      // 2. Jika masih belum ditemukan, coba cari berdasarkan Nama Lengkap + NIM
+      if (matchingRows.length === 0) {
+        var payloadName = (rowData["Nama Lengkap"] || rowData["Nama"] || "").toString().trim().toLowerCase();
+        var payloadNim = (rowData["NIM/NIS"] || rowData["student_id"] || "").toString().trim().toLowerCase();
+        if (payloadName !== "") {
+          var nameColIdx = -1;
+          var nimColIdx = -1;
+          for (var nc = 0; nc < actualHeaders.length; nc++) {
+            var hnc = actualHeaders[nc].toString().trim().toUpperCase();
+            if (hnc === "NAMA LENGKAP" || hnc === "NAMA") nameColIdx = nc + 1;
+            if (hnc === "NIM/NIS" || hnc === "NIM") nimColIdx = nc + 1;
+          }
+          if (nameColIdx > 0) {
+            var nameValues = sheet.getRange(headerRowIndex + 1, nameColIdx, numDataRows, 1).getValues();
+            var nimValues = (nimColIdx > 0) ? sheet.getRange(headerRowIndex + 1, nimColIdx, numDataRows, 1).getValues() : null;
+            for (var ni = 0; ni < nameValues.length; ni++) {
+              var sheetName = nameValues[ni][0].toString().trim().toLowerCase();
+              if (sheetName === payloadName) {
+                if (nimValues && payloadNim !== "" && payloadNim !== "-") {
+                  var sheetNim = nimValues[ni][0].toString().trim().toLowerCase();
+                  if (sheetNim === payloadNim) {
+                    matchingRows.push(headerRowIndex + 1 + ni);
+                  }
+                } else {
+                  matchingRows.push(headerRowIndex + 1 + ni);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
     if (matchingRows.length > 1) {
-      return createJsonResponse({
-        success: false,
-        sync_id: syncId,
-        error_code: "DUPLICATE_SYNC_ID",
-        is_retryable: false,
-        message: "Terdeteksi lebih dari satu baris (" + matchingRows.length + ") dengan SERTIF_SYNC_ID '" + syncId + "'. Operasi upsert dihentikan fail-closed."
-      }, 409);
+      // Ambil baris terakhir jika terjadi duplikasi historis agar memutakhirkan baris terkini
+      matchingRows = [matchingRows[matchingRows.length - 1]];
     }
 
     var targetRowIndex = (matchingRows.length === 1) ? matchingRows[0] : Math.max(lastRow + 1, headerRowIndex + 1);
@@ -1032,6 +1083,33 @@ function handleUpsertRowAction(payload) {
 
     sheet.getRange(targetRowIndex, 1, 1, rowValues.length).setValues([rowValues]);
 
+    // Resolusi dan penerapan warna latar cell/baris berdasarkan status
+    var statusColor = payload.status_color || payload.row_color || (rowData ? (rowData.ROW_COLOR || rowData.status_color) : null);
+    if (!statusColor && rowData) {
+      var ketText = (rowData.KET || rowData.ket || rowData["Status Anda saat ini"] || "").toString();
+      if (/dinyatakan diterima|peserta/i.test(ketText)) {
+        statusColor = "#fff200"; // Kuning
+      } else if (/masuk magang|aktif/i.test(ketText)) {
+        statusColor = "#00ff00"; // Hijau cerah
+      } else if (/tidak jadi|batal|tolak|keluar/i.test(ketText)) {
+        statusColor = "#ff0000"; // Merah
+      } else if (/selesai/i.test(ketText)) {
+        statusColor = "#ff9900"; // Oranye
+      } else if (/belum acc/i.test(ketText)) {
+        statusColor = "#ff00ff"; // Magenta
+      } else if (/menunggu jawaban/i.test(ketText)) {
+        statusColor = "#4f95a3"; // Teal
+      } else if (/kepastian tanggal/i.test(ketText)) {
+        statusColor = "#00e5ee"; // Cyan
+      } else if (/pending/i.test(ketText)) {
+        statusColor = "#fff2cc"; // Kuning muda
+      }
+    }
+
+    if (statusColor && /^#[0-9a-fA-F]{6}$/i.test(statusColor)) {
+      sheet.getRange(targetRowIndex, 1, 1, rowValues.length).setBackground(statusColor);
+    }
+
     // Explicitly flush pending changes before releasing script lock
     SpreadsheetApp.flush();
 
@@ -1042,6 +1120,8 @@ function handleUpsertRowAction(payload) {
       row_index: targetRowIndex,
       tab_name: targetTabName,
       operation: operation,
+      applied_status_color: statusColor || null,
+      gateway_version: "2026.11.color_v1",
       timestamp: new Date().toISOString()
     });
   } catch (err) {
@@ -1387,7 +1467,7 @@ function handleUpdateRowAction(payload) {
     }
 
     // Map row values and strictly validate schema compatibility against contract
-    var mappingResult = buildRowValuesForSheet(actualHeaders, rowData, connectionKey, autoSyncHeaders);
+    var mappingResult = buildRowValuesForSheet(actualHeaders, rowData, connectionKey, autoSyncHeaders, syncId);
     if (mappingResult.error) {
       return createJsonResponse({
         success: false,
@@ -1403,6 +1483,33 @@ function handleUpdateRowAction(payload) {
     // Strictly UPDATE the single matching row
     sheet.getRange(targetRowIndex, 1, 1, rowValues.length).setValues([rowValues]);
 
+    // Resolusi dan penerapan warna latar cell/baris berdasarkan status
+    var statusColor = payload.status_color || payload.row_color || (rowData ? (rowData.ROW_COLOR || rowData.status_color) : null);
+    if (!statusColor && rowData) {
+      var ketText = (rowData.KET || rowData.ket || rowData["Status Anda saat ini"] || "").toString();
+      if (/dinyatakan diterima|peserta/i.test(ketText)) {
+        statusColor = "#fff200"; // Kuning
+      } else if (/masuk magang|aktif/i.test(ketText)) {
+        statusColor = "#00ff00"; // Hijau cerah
+      } else if (/tidak jadi|batal|tolak|keluar/i.test(ketText)) {
+        statusColor = "#ff0000"; // Merah
+      } else if (/selesai/i.test(ketText)) {
+        statusColor = "#ff9900"; // Oranye
+      } else if (/belum acc/i.test(ketText)) {
+        statusColor = "#ff00ff"; // Magenta
+      } else if (/menunggu jawaban/i.test(ketText)) {
+        statusColor = "#4f95a3"; // Teal
+      } else if (/kepastian tanggal/i.test(ketText)) {
+        statusColor = "#00e5ee"; // Cyan
+      } else if (/pending/i.test(ketText)) {
+        statusColor = "#fff2cc"; // Kuning muda
+      }
+    }
+
+    if (statusColor && /^#[0-9a-fA-F]{6}$/i.test(statusColor)) {
+      sheet.getRange(targetRowIndex, 1, 1, rowValues.length).setBackground(statusColor);
+    }
+
     // Explicitly flush pending changes before releasing script lock
     SpreadsheetApp.flush();
 
@@ -1413,6 +1520,8 @@ function handleUpdateRowAction(payload) {
       row_index: targetRowIndex,
       tab_name: targetTabName,
       operation: "updated",
+      applied_status_color: statusColor || null,
+      gateway_version: "2026.11.color_v1",
       timestamp: new Date().toISOString()
     }, 200);
   } catch (err) {

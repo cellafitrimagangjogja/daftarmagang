@@ -467,7 +467,7 @@ class RegistrationSpreadsheetMappingService
         $valuesByPosition = [];
 
         foreach ($mappings as $mapping) {
-            $value = $this->resolveColumnValue($registration, $mapping);
+            $value = $this->resolveColumnValue($registration, $mapping, $rowSync);
             $escaped = self::escapeFormulaInjection($value);
 
             // Legacy header map
@@ -514,7 +514,7 @@ class RegistrationSpreadsheetMappingService
     /**
      * Resolusi nilai spesifik tiap kolom berdasarkan target_field dan transform_key.
      */
-    public function resolveColumnValue(InternshipRegistration $registration, SpreadsheetColumnMapping $mapping): mixed
+    public function resolveColumnValue(InternshipRegistration $registration, SpreadsheetColumnMapping $mapping, ?\App\Models\SpreadsheetRowSync $rowSync = null): mixed
     {
         if ($mapping->target_entity === 'external_sheet') {
             return '';
@@ -571,11 +571,11 @@ class RegistrationSpreadsheetMappingService
             'supervisor_contact' => $registration->supervisor_contact ?? '-',
             'current_activities' => $registration->current_activities ?? '-',
             'status_label', 'ket' => $this->resolveKetValue($registration),
-            // Guardrail 2: S9B tidak menciptakan stable sync ID atau mengklaim status synced
-            'sertif_sync_id' => null,
+            // Guardrail 2: sertif_sync_id diisi jika rowSync tersedia
+            'sertif_sync_id' => $rowSync?->external_sync_id ?? null,
             'sertif_registration_id' => (string) $registration->id,
-            'sertif_sync_status' => 'pending',
-            'sertif_last_sync_at' => null,
+            'sertif_sync_status' => $rowSync ? 'synced' : 'pending',
+            'sertif_last_sync_at' => $rowSync?->last_synced_at?->toIso8601String() ?? null,
             'custom_field' => $this->resolveCustomFieldAnswer($registration, $mapping->target_field),
             default => $this->fallbackResolve($registration, $mapping->target_field),
         };

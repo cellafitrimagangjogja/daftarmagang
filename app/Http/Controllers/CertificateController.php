@@ -6,6 +6,7 @@ use App\Models\InternCertificate;
 use App\Models\WebinarCertificate;
 use App\Models\InternshipRegistration as IR;
 use App\Models\Brand;
+use App\Models\Division;
 use App\Models\WebinarAttendance;
 
 use Illuminate\Http\Request;
@@ -20,29 +21,32 @@ class CertificateController extends Controller
 {
     public function index()
     {
-        $internCerts = InternCertificate::with('intern')->orderByDesc('id')->get()->map(function($cert) {
+        $internCerts = InternCertificate::with(['intern.brandRel', 'intern.division'])->orderByDesc('id')->get()->map(function($cert) {
             $cert->type = 'intern';
             $cert->name = $cert->intern->fullname ?? '-';
-            $cert->division = $cert->intern->internship_interest ?? 'ADM';
+            $cert->division = $cert->intern->division->name ?? $cert->intern->internship_interest ?? 'ADM';
             $cert->company = $cert->company_name;
-            $cert->brand = $cert->intern->brand ?? '-';
+            $cert->brand = $cert->intern->brandRel->name ?? $cert->intern->brand ?? '-';
             $cert->serial_number = $cert->certificate_number;
             return $cert;
         });
 
-        $webinarCerts = WebinarCertificate::with('attendance.user')->orderByDesc('id')->get()->map(function($cert) {
+        $webinarCerts = WebinarCertificate::with(['attendance.user', 'attendance.webinar.brand'])->orderByDesc('id')->get()->map(function($cert) {
             $cert->type = 'webinar';
             $cert->name = $cert->attendance->user->name ?? '-';
             $cert->division = 'Webinar';
             $cert->company = $cert->company_name;
-            $cert->brand = '-';
+            $cert->brand = $cert->attendance?->webinar?->brand?->name ?? '-';
             $cert->serial_number = $cert->certificate_number;
             return $cert;
         });
 
         $certificates = $internCerts->concat($webinarCerts)->sortByDesc('id')->values();
 
-        return view('certificates.index', compact('certificates'));
+        $brands = Brand::orderBy('name')->get();
+        $divisions = Division::orderBy('name')->get();
+
+        return view('certificates.index', compact('certificates', 'brands', 'divisions'));
     }
 
     /** Show completed interns for bulk certificate issuance. */
@@ -393,18 +397,47 @@ class CertificateController extends Controller
             mkdir(dirname($tmpPath), 0775, true);
         }
 
-        $shot = Browsershot::html($html)
-            ->format('A4')
-            ->landscape()
-            ->margins(0, 0, 0, 0)
-            ->timeout(180)
-            ->setOption('args', ['--no-sandbox', '--disable-setuid-sandbox']);
+        try {
+            $shot = Browsershot::html($html)
+                ->format('A4')
+                ->landscape()
+                ->margins(0, 0, 0, 0)
+                ->timeout(180)
+                ->setOption('args', ['--no-sandbox', '--disable-setuid-sandbox']);
 
-        $shot->emulateMedia('screen')
-             ->showBackground()
-             ->setOption('printBackground', true);
+            if ($chromePath = env('BROWSERSHOT_CHROME_PATH')) {
+                $shot->setChromePath($chromePath);
+            } else {
+                $chromeCandidates = [
+                    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+                    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+                    '/usr/bin/google-chrome',
+                    '/usr/bin/chromium-browser',
+                ];
+                foreach ($chromeCandidates as $candidate) {
+                    if (file_exists($candidate)) {
+                        $shot->setChromePath($candidate);
+                        break;
+                    }
+                }
+            }
 
-        $shot->savePdf($tmpPath);
+            $shot->emulateMedia('screen')
+                 ->showBackground()
+                 ->setOption('printBackground', true);
+
+            $shot->savePdf($tmpPath);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Browsershot certificate generation failed, falling back to DomPDF: ' . $e->getMessage());
+
+            if (class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
+                \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)
+                    ->setPaper('a4', 'landscape')
+                    ->save($tmpPath);
+            } else {
+                throw $e;
+            }
+        }
 
         return response()->download($tmpPath, $filename, [
             'Content-Type' => 'application/pdf',
