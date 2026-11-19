@@ -1,6 +1,10 @@
 @extends('layouts.dashboard')
 
-@php use Illuminate\Support\Str; @endphp
+@php
+    use Illuminate\Support\Str;
+    $brands = $brands ?? \App\Models\Brand::orderBy('name')->get();
+    $divisions = $divisions ?? \App\Models\Division::orderBy('name')->get();
+@endphp
 
 @section('content')
 
@@ -97,16 +101,19 @@
             <select id="brandFilter" onchange="filterTable()"
                 class="rounded-[9px] border border-[#DCE7E1] bg-[#F4F8F6] px-3 py-2 text-[13px] text-[#1B3A34] outline-none focus:border-[#2D8659]">
                 <option value="">Semua Brand</option>
-                @foreach(collect($certificates)->pluck('brand')->filter()->unique()->values() as $b)
-                <option value="{{ $b }}">{{ $b }}</option>
+                @foreach($brands as $brand)
+                <option value="{{ $brand->name }}">{{ $brand->name }}</option>
                 @endforeach
             </select>
             <select id="divisionFilter" onchange="filterTable()"
                 class="rounded-[9px] border border-[#DCE7E1] bg-[#F4F8F6] px-3 py-2 text-[13px] text-[#1B3A34] outline-none focus:border-[#2D8659]">
                 <option value="">Semua Divisi</option>
-                @foreach(collect($certificates)->pluck('division')->filter()->unique()->values() as $d)
-                <option value="{{ $d }}">{{ $d }}</option>
+                @foreach($divisions as $division)
+                <option value="{{ $division->name }}">{{ $division->name }}</option>
                 @endforeach
+                @if(collect($certificates)->contains('division', 'Webinar'))
+                <option value="Webinar">Webinar</option>
+                @endif
             </select>
         </div>
     </div>
@@ -128,9 +135,9 @@
                 <tbody id="certTable" class="divide-y divide-[#DCE7E1]">
                     @forelse($certificates as $cert)
                     <tr class="transition hover:bg-[#F4F8F6]"
-                        data-brand="{{ strtolower($cert->brand) }}"
-                        data-division="{{ strtolower($cert->division) }}"
-                        data-search="{{ Str::lower($cert->name.' '.$cert->company.' '.$cert->serial_number) }}">
+                        data-brand="{{ strtolower(trim($cert->brand ?? '')) }}"
+                        data-division="{{ strtolower(trim($cert->division ?? '')) }}"
+                        data-search="{{ Str::lower(($cert->name ?? '').' '.($cert->company ?? '').' '.($cert->serial_number ?? '')) }}">
 
                         <td class="px-5 py-4">
                             <p class="font-semibold text-[#1B3A34]">{{ $cert->name }}</p>
@@ -192,13 +199,18 @@
 
 // ── Filter tabel ────────────────────────────────────────────────────────────
 function filterTable() {
-    const q = (document.getElementById('searchInput').value || '').toLowerCase();
-    const b = (document.getElementById('brandFilter').value || '').toLowerCase();
-    const d = (document.getElementById('divisionFilter').value || '').toLowerCase();
+    const q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+    const b = (document.getElementById('brandFilter').value || '').toLowerCase().trim();
+    const d = (document.getElementById('divisionFilter').value || '').toLowerCase().trim();
     document.querySelectorAll('#certTable tr').forEach(row => {
-        const ok = (!q || (row.dataset.search||'').includes(q))
-                && (!b || (row.dataset.brand||'') === b)
-                && (!d || (row.dataset.division||'') === d);
+        if (!row.dataset.brand && !row.dataset.division) return;
+        const rowBrand = (row.dataset.brand || '').toLowerCase().trim();
+        const rowDivision = (row.dataset.division || '').toLowerCase().trim();
+        const rowSearch = (row.dataset.search || '').toLowerCase();
+
+        const ok = (!q || rowSearch.includes(q))
+                && (!b || rowBrand === b)
+                && (!d || rowDivision === d);
         row.style.display = ok ? '' : 'none';
     });
 }

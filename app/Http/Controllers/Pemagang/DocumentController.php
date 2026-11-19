@@ -244,16 +244,45 @@ class DocumentController extends Controller
         // Ukuran kartu kredit standar: 85.6mm × 53.98mm
         // @ 96dpi: 85.6mm ÷ 25.4 × 96 ≈ 323px wide, 53.98mm ÷ 25.4 × 96 ≈ 204px high
         // Scale 2× untuk kualitas tinggi → 646 × 408
-        \Spatie\Browsershot\Browsershot::html($html)
-            ->emulateMedia('screen')
-            ->showBackground()
-            ->margins(0, 0, 0, 0)
-            ->windowSize(646, 408)
-            ->deviceScaleFactor(2)
-            ->paperSize(85.6, 53.98, 'mm')
-            ->setOption('printBackground', true)
-            ->timeout(60)
-            ->savePdf($tmpPath);
+        try {
+            $shot = \Spatie\Browsershot\Browsershot::html($html)
+                ->emulateMedia('screen')
+                ->showBackground()
+                ->margins(0, 0, 0, 0)
+                ->windowSize(646, 408)
+                ->deviceScaleFactor(2)
+                ->paperSize(85.6, 53.98, 'mm')
+                ->setOption('printBackground', true)
+                ->setOption('args', ['--no-sandbox', '--disable-setuid-sandbox'])
+                ->timeout(60);
+
+            if ($chromePath = env('BROWSERSHOT_CHROME_PATH')) {
+                $shot->setChromePath($chromePath);
+            } else {
+                $chromeCandidates = [
+                    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+                    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+                    '/usr/bin/google-chrome',
+                    '/usr/bin/chromium-browser',
+                ];
+                foreach ($chromeCandidates as $candidate) {
+                    if (file_exists($candidate)) {
+                        $shot->setChromePath($candidate);
+                        break;
+                    }
+                }
+            }
+
+            $shot->savePdf($tmpPath);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Browsershot membercard generation failed, falling back to DomPDF: ' . $e->getMessage());
+
+            if (class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
+                \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)
+                    ->setPaper([0, 0, 242.6, 153.0], 'landscape')
+                    ->save($tmpPath);
+            }
+        }
 
         // Simpan salinan permanen dan sinkronisasikan ke Google Drive
         $permRelPath = "documents/{$reg->id}/{$filename}";

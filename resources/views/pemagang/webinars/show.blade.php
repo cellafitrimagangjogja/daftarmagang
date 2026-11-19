@@ -96,9 +96,11 @@
           <div class="mb-4">
             <p class="text-xs font-medium text-gray-500 mb-1">Bukti yang sudah dikirim:</p>
             @php $ext = pathinfo($attendance->proof_file, PATHINFO_EXTENSION); @endphp
-            @if(in_array(strtolower($ext), ['jpg','jpeg','png']))
-              <img src="{{ asset('storage/' . $attendance->proof_file) }}"
-                   alt="Bukti kehadiran" class="max-h-40 rounded-lg border border-gray-200">
+            @if(in_array(strtolower($ext), ['jpg','jpeg','png','webp']))
+              <a href="{{ asset('storage/' . $attendance->proof_file) }}" target="_blank" title="Klik untuk melihat ukuran penuh">
+                <img src="{{ asset('storage/' . $attendance->proof_file) }}"
+                     alt="Bukti kehadiran" class="max-h-40 rounded-lg border border-gray-200 hover:opacity-90 transition cursor-pointer">
+              </a>
             @else
               <a href="{{ asset('storage/' . $attendance->proof_file) }}" target="_blank"
                  class="text-sm text-blue-600 hover:underline">
