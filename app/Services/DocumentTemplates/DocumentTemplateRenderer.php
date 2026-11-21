@@ -60,10 +60,65 @@ class DocumentTemplateRenderer
     {
         $rawContent = $template->content_html ?? '';
         $resolvedHtml = MailMergePlaceholderContract::resolve($rawContent, $data, $isLiveIssuance);
+        if ($template->type === 'assessment') {
+            $resolvedHtml = static::bindAssessmentRowsToTemplate($resolvedHtml, $data);
+        }
+        if (in_array($template->type, ['skl', 'assessment'], true)) {
+            $resolvedHtml = static::ensureLetterheadLogo($resolvedHtml, $data);
+        }
         $sanitizedHtml = static::sanitizeHtml($resolvedHtml);
         $pageConfig = array_merge(DocumentTemplate::getDefaultPageConfig($template->type), $template->page_config ?? []);
 
         return static::wrapLetterDocumentHtml($sanitizedHtml, $pageConfig, $template->name, $isForPdf, $data);
+    }
+
+    /** Bind saved assessment data to the existing score table without changing its template markup. */
+    private static function bindAssessmentRowsToTemplate(string $html, array $data): string
+    {
+        $components = $data['penilaian.aspek_data'] ?? null;
+        if (!is_array($components) || $components === []) {
+            return $html;
+        }
+
+        $average = is_numeric($data['penilaian.nilai_akhir'] ?? null)
+            ? (float) $data['penilaian.nilai_akhir']
+            : null;
+        $predicate = $average === null ? '' : ($average >= 85 ? 'Sangat Baik' : ($average >= 75 ? 'Baik' : 'Cukup'));
+        $defaultWeight = 100 / count($components);
+        $rows = '';
+        foreach ($components as $index => $component) {
+            if (!is_array($component)) {
+                continue;
+            }
+            $escape = static fn ($value) => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+            $name = $escape($component['aspek'] ?? '');
+            $weight = rtrim(rtrim(number_format((float) ($component['bobot'] ?? $defaultWeight), 2, '.', ''), '0'), '.');
+            $score = is_numeric($component['nilai'] ?? null) ? (float) $component['nilai'] : '';
+            $rating = $score === '' ? '' : ($score >= 85 ? 'Sangat Baik' : ($score >= 75 ? 'Baik' : 'Cukup'));
+            $rows .= '<tr><td style="text-align: center; padding: 5px;">' . ((int) $index + 1) . '</td>'
+                . '<td style="padding: 5px;">' . $name . '</td>'
+                . '<td style="text-align: center; padding: 5px;">' . $escape($weight) . '%</td>'
+                . '<td style="text-align: center; padding: 5px;">' . $escape($score) . '</td>'
+                . '<td style="text-align: center; padding: 5px;">' . $rating . '</td></tr>';
+        }
+
+        if ($rows === '') {
+            return $html;
+        }
+        if ($average !== null) {
+            $rows .= '<tr style="font-weight: bold; background-color: #f8fafc;">'
+                . '<td colspan="3" style="text-align: right; padding: 6px;">NILAI AKHIR RATA-RATA:</td>'
+                . '<td style="text-align: center; padding: 6px;">' . $escape($average) . '</td>'
+                . '<td style="text-align: center; padding: 6px;">GRADE: ' . ($average >= 85 ? 'A' : ($average >= 75 ? 'B' : 'C')) . '</td></tr>';
+        }
+
+        return preg_replace_callback('/<table\b[^>]*>.*?<\/table>/is', static function ($tableMatch) use ($rows) {
+            $table = $tableMatch[0];
+            if (!preg_match('/Komponen\s+Penilaian/i', $table) || !preg_match('/<tbody\b[^>]*>.*?<\/tbody>/is', $table)) {
+                return $table;
+            }
+            return preg_replace('/<tbody\b[^>]*>.*?<\/tbody>/is', '<tbody>' . $rows . '</tbody>', $table, 1);
+        }, $html);
     }
 
     /**
@@ -907,6 +962,78 @@ HTML;
             $out .= $dom->saveHTML($child);
         }
         return trim($out);
+    }
+
+    /**
+     * Pastikan logo dokumen SKL/penilaian berada di sel kop surat template,
+     * bukan sebagai elemen fixed yang menimpa tata letak template.
+     */
+    protected static function ensureLetterheadLogo(string $html, array $data): string
+    {
+        $logo = $data['asset.brand.logo'] ?? $data['asset.company.logo'] ?? null;
+        $logo = static::resolveImageToBase64(is_string($logo) ? $logo : null)
+            ?? static::resolveImageToBase64('/images/mou/seven-inc-logo.png');
+        if (!$logo) {
+            return $html;
+        }
+
+        $previous = libxml_use_internal_errors(true);
+        $dom = new DOMDocument('1.0', 'UTF-8');
+        $dom->loadHTML('<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body><div id="__letterhead_root__">' . $html . '</div></body></html>');
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        $xpath = new DOMXPath($dom);
+        $root = $xpath->query('//*[@id="__letterhead_root__"]')->item(0);
+        if (!$root instanceof DOMElement) {
+            return $html;
+        }
+
+        $tables = $xpath->query('.//table', $root);
+        if (!$tables->length) {
+            return $html;
+        }
+
+        // Kop surat biasanya tabel pertama. Bila ada nama perusahaan di tabel lain,
+        // pilih tabel tersebut agar logo masuk ke area kop yang benar.
+        $headerTable = $tables->item(0);
+        foreach ($tables as $table) {
+            if (preg_match('/perusahaan\.nama|brand\.nama|company_name|seven\s*inc/i', $table->textContent)) {
+                $headerTable = $table;
+                break;
+            }
+        }
+
+        $cells = $xpath->query('.//tr[1]/td | .//tr[1]/th', $headerTable);
+        if (!$cells->length) {
+            return $html;
+        }
+
+        $cell = $cells->item(0);
+        $images = $xpath->query('.//img', $cell);
+        if ($images->length) {
+            $image = $images->item(0);
+            $currentSrc = trim($image->getAttribute('src'));
+            if (!$currentSrc || !static::resolveImageToBase64($currentSrc)) {
+                $image->setAttribute('src', $logo);
+            }
+        } else {
+            $image = $dom->createElement('img');
+            $image->setAttribute('src', $logo);
+            $image->setAttribute('alt', 'Logo Perusahaan');
+            $image->setAttribute('style', 'max-width: 100px; max-height: 60px; width: auto; height: auto; object-fit: contain; vertical-align: middle;');
+            if ($cell->firstChild) {
+                $cell->insertBefore($image, $cell->firstChild);
+            } else {
+                $cell->appendChild($image);
+            }
+        }
+
+        $result = '';
+        foreach ($root->childNodes as $child) {
+            $result .= $dom->saveHTML($child);
+        }
+        return $result;
     }
 
     protected static function sanitizeDomNode(DOMNode $parent): void

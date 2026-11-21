@@ -267,7 +267,9 @@ class LoaController extends Controller
 
         /** @var \App\Services\DocumentGeneratorService $docService */
         $docService = app(\App\Services\DocumentGeneratorService::class);
-        $internLoa = $docService->ensureLoaGenerated($intern, $user);
+        // Render ulang saat diunduh supaya logo brand yang terbaru ikut tertanam,
+        // termasuk pada PDF lama yang sebelumnya tersimpan tanpa logo.
+        $internLoa = $docService->ensureLoaGenerated($intern, $user, forceRefresh: true);
 
         $safeLoaNumber = str_replace(['/', '\\'], '-', $internLoa->loa_number);
         $safeName = Str::slug($intern->fullname ?? 'intern', '-');

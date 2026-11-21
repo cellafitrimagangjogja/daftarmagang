@@ -166,6 +166,18 @@ class MailMergePlaceholderContract
             return '<img src="' . htmlspecialchars($stampImage, ENT_QUOTES, 'UTF-8') . '" alt="Stempel Resmi" style="height: 105px; width: auto; vertical-align: middle;" />';
         }, $resolved);
 
+        // Tabel komponen penilaian adalah HTML tepercaya yang dirender dari data
+        // tersimpan. Sisipkan tanpa escaping agar tetap menjadi tabel di PDF.
+        foreach (['penilaian.tabel_komponen', 'assessment_table', 'tabel_penilaian', 'komponen_nilai'] as $tableToken) {
+            if (!array_key_exists($tableToken, $flatValues)) {
+                continue;
+            }
+            $tableHtml = (string) $flatValues[$tableToken];
+            $pattern = '/\{\{\s*' . preg_quote($tableToken, '/') . '\s*\}\}|\[\s*' . preg_quote($tableToken, '/') . '\s*\]/i';
+            $resolved = preg_replace_callback($pattern, static fn () => $tableHtml, $resolved);
+            unset($flatValues[$tableToken]);
+        }
+
         // 3. Substitusi seluruh variabel skalar (teks, tanggal, nomor)
         foreach ($flatValues as $key => $val) {
             $escapedKey = preg_quote($key, '/');

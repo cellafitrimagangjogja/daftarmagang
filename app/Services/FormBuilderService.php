@@ -806,7 +806,7 @@ class FormBuilderService
         $fieldKey = trim((string) ($data['field_key'] ?? ''));
         $fieldType = trim((string) ($data['field_type'] ?? 'text'));
         $label = trim((string) ($data['label'] ?? ''));
-        $options = $data['options'] ?? null;
+        $options = $this->normalizeFieldOptions($fieldType, $data['options'] ?? null);
 
         if (empty($fieldKey) || empty($label)) {
             throw new InvalidArgumentException("field_key dan label wajib diisi.");
@@ -894,10 +894,8 @@ class FormBuilderService
             if (array_key_exists('helper_text', $data)) $safePayload['helper_text'] = $data['helper_text'];
             if (array_key_exists('column_span', $data)) $safePayload['column_span'] = (int) $data['column_span'];
             if (array_key_exists('options', $data)) {
-                $newOpts = is_array($data['options']) ? $data['options'] : (json_decode((string) $data['options'], true) ?? null);
-                if ($newOpts !== null) {
-                    $safePayload['options'] = $this->mergeAllowedOptions($field->options, $newOpts);
-                }
+                $newOpts = $this->normalizeFieldOptions($field->field_type, $data['options']);
+                $safePayload['options'] = $this->mergeAllowedOptions($field->options, $newOpts);
             }
             $field->update($safePayload);
             return $field->fresh();
@@ -914,6 +912,7 @@ class FormBuilderService
         $newType = $data['field_type'] ?? $field->field_type;
         $newLabel = $data['label'] ?? $field->label;
         $newOptions = array_key_exists('options', $data) ? $data['options'] : $field->options;
+        $newOptions = $this->normalizeFieldOptions($newType, $newOptions);
 
         // Validasi konsistensi identitas
         $this->validateFieldKeyIdentityConsistency($field->field_key, $newType, $newLabel, $newOptions);
@@ -944,6 +943,58 @@ class FormBuilderService
 
         $field->update($updatePayload);
         return $field->fresh();
+    }
+
+    /**
+     * Pastikan field pilihan memiliki opsi valid sebelum disimpan atau dipublikasikan.
+     * Opsi untuk tipe field lain tetap diabaikan.
+     */
+    protected function normalizeFieldOptions(string $fieldType, mixed $options): ?array
+    {
+        if (!in_array($fieldType, ['select', 'radio', 'checkbox'], true)) {
+            return null;
+        }
+
+        if (is_string($options)) {
+            $decoded = json_decode($options, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new InvalidArgumentException('Opsi pertanyaan tidak valid. Muat ulang editor opsi dan coba simpan kembali.');
+            }
+            $options = $decoded;
+        }
+
+        if (!is_array($options) || count($options) === 0) {
+            throw new InvalidArgumentException('Pertanyaan pilihan harus memiliki minimal satu opsi yang valid.');
+        }
+
+        $normalized = [];
+        $seenValues = [];
+        foreach ($options as $option) {
+            if (!is_array($option)
+                || !isset($option['value'], $option['label'])
+                || !is_scalar($option['value'])
+                || !is_scalar($option['label'])) {
+                throw new InvalidArgumentException('Setiap opsi harus memiliki value dan label berupa teks.');
+            }
+
+            $value = trim((string) $option['value']);
+            $label = trim((string) $option['label']);
+            if ($value === '' || $label === '') {
+                throw new InvalidArgumentException('Value dan label setiap opsi wajib diisi.');
+            }
+            if (in_array($value, $seenValues, true)) {
+                throw new InvalidArgumentException("Value opsi '{$value}' tidak boleh duplikat.");
+            }
+
+            $seenValues[] = $value;
+            $normalizedOption = array_merge($option, ['value' => $value, 'label' => $label]);
+            if (isset($normalizedOption['description']) && !is_scalar($normalizedOption['description'])) {
+                throw new InvalidArgumentException('Deskripsi opsi harus berupa teks.');
+            }
+            $normalized[] = $normalizedOption;
+        }
+
+        return $normalized;
     }
 
     /**

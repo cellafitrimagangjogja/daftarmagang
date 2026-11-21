@@ -165,6 +165,8 @@ class SKLController extends Controller
                             options: [
                                 'document_number' => $letterNumber,
                                 'template_id'     => $activeTemplate->id,
+                                'signatory_name'  => $validated['leader_name'],
+                                'signatory_position' => $validated['leader_title'],
                             ],
                             actor: $request->user()
                         );
@@ -537,14 +539,7 @@ class SKLController extends Controller
                 ->first();
 
             // Cek apakah berkas fisik yang valid dan berukuran penuh (> 260KB) sudah tersedia (abaikan jika force_refresh)
-            if (!$request->boolean('force_refresh') && $genDoc && Storage::disk('local')->exists($genDoc->file_path)) {
-                $fullPath = Storage::disk('local')->path($genDoc->file_path);
-                if (filesize($fullPath) > 260000) {
-                    return response()->download($fullPath, $fileName, ['Content-Type' => 'application/pdf']);
-                }
-            }
-
-            // Jika belum ada atau berkas lama belum memuat gambar, render PDF dari template aktif
+            // Render ulang PDF saat diunduh agar PDF lama memakai logo brand terbaru.
             try {
                 $context = $issuanceService->buildContext($ir, 'skl', ['template_id' => $activeTemplate->id], isLiveIssuance: true);
                 $pdfBinary = \App\Services\DocumentTemplates\DocumentTemplateRenderer::renderPdfBinary($activeTemplate, $context['variables'], isLiveIssuance: true);
@@ -628,7 +623,7 @@ class SKLController extends Controller
         $endStr        = $ir->end_date   ? Carbon::parse($ir->end_date)->isoFormat('D MMMM Y')   : '-';
         $letterDateStr = $ir->end_date   ? Carbon::parse($ir->end_date)->isoFormat('D MMMM Y')   : now()->translatedFormat('d F Y');
 
-        $logoData  = $this->resolveBase64Image(new Request(), 'logo',  $sklRecord->company_logo_path,  '');
+        $logoData  = $this->resolveBase64Image(new Request(), 'logo',  $sklRecord->company_logo_path,  'images/mou/seven-inc-logo.png');
         $stampData = $this->resolveBase64Image(new Request(), 'stamp', $brandData?->stamp,            '');
         $sigData   = $this->resolveBase64Image(new Request(), 'sig',   $sklRecord->signature_image_path, '');
 
@@ -636,8 +631,12 @@ class SKLController extends Controller
             'companyName'            => $companyName,
             'companyAddress'         => $companyAddress,
             'companyCity'            => 'Yogyakarta',
-            'leaderName'             => $sklRecord->signatory_name ?? $brandData?->signatory_name ?? 'Ari Setia Husbana',
-            'leaderTitle'            => $sklRecord->signatory_position ?? $brandData?->signatory_position ?? 'HRD',
+            'leaderName'             => trim((string) $brandData?->signatory_name) !== ''
+                ? $brandData->signatory_name
+                : (trim((string) $sklRecord->signatory_name) !== '' ? $sklRecord->signatory_name : ''),
+            'leaderTitle'            => trim((string) $brandData?->signatory_position) !== ''
+                ? $brandData->signatory_position
+                : (trim((string) $sklRecord->signatory_position) !== '' ? $sklRecord->signatory_position : 'HRD'),
             'letterNumber'           => $sklRecord->skl_number,
             'logoData'               => $logoData,
             'stampData'              => $stampData,

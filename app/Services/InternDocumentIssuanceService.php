@@ -208,14 +208,33 @@ class InternDocumentIssuanceService
             $companyAddress = 'Jl. Janti Gg. Arjuna No. 59, Karangjambe, Banguntapan, Bantul, Yogyakarta 55198';
         }
         
-        // Signatory: Pada live issuance TIDAK BOLEH fallback ke brand lain atau nama mock/placeholder (INV-06, INV-14)
-        if ($isLiveIssuance) {
-            $signatoryName = $brandModel?->signatory_name;
-            $signatoryPosition = $brandModel?->signatory_position;
-        } else {
-            $signatoryName = $brandModel?->signatory_name ?: (Brand::whereNotNull('signatory_name')->where('signatory_name', '!=', '')->value('signatory_name') ?: 'Ari Setia Husbana');
-            $signatoryPosition = $brandModel?->signatory_position ?: (Brand::whereNotNull('signatory_position')->where('signatory_position', '!=', '')->value('signatory_position') ?: 'HRD');
-        }
+        // Pertahankan nama yang tersimpan di dokumen, lalu gunakan profil brand
+        // terkait. String kosong diperlakukan sama seperti null agar tidak
+        // mengosongkan placeholder penandatangan saat PDF dirender ulang.
+        $storedDocument = match ($canonical) {
+            self::TYPE_SKL => SklDocument::where('intern_id', $intern->id)->latest('id')->first(),
+            self::TYPE_ASSESSMENT => InternAssessment::where('intern_id', $intern->id)->latest('id')->first(),
+            default => null,
+        };
+        $firstNonEmpty = static function (...$values): ?string {
+            foreach ($values as $value) {
+                $value = trim((string) $value);
+                if ($value !== '') {
+                    return $value;
+                }
+            }
+            return null;
+        };
+        $signatoryName = $firstNonEmpty(
+            $options['signatory_name'] ?? null,
+            $brandModel?->signatory_name,
+            $storedDocument?->signatory_name
+        );
+        $signatoryPosition = $firstNonEmpty(
+            $options['signatory_position'] ?? null,
+            $brandModel?->signatory_position,
+            $storedDocument?->signatory_position
+        ) ?? 'HRD';
 
         if ($canonical === self::TYPE_RECOMMENDATION) {
             if ($isLiveIssuance) {
@@ -237,10 +256,15 @@ class InternDocumentIssuanceService
         }
 
         // Resolusi Nilai Asli dari InternAssessment (bukan hardcoded 85.0 / Sangat Baik)
-        $assessment = InternAssessment::where('intern_id', $intern->id)->first();
-        if ($assessment && $assessment->rata_rata !== null) {
-            $rataRata = (string) $assessment->rata_rata;
-            $predikat = ($assessment->rata_rata >= 85) ? 'Sangat Baik (A)' : (($assessment->rata_rata >= 75) ? 'Baik (B)' : 'Cukup (C)');
+        $assessment = InternAssessment::where('intern_id', $intern->id)->latest('id')->first();
+        $assessmentComponents = $options['aspek_penilaian'] ?? $assessment?->aspek_penilaian ?? [];
+        // The aspect rows are the source of truth. Recalculate here so old or
+        // stale rata_rata values can never override the scores shown in the form.
+        $assessmentAverage = $this->calculateAssessmentAverage($assessmentComponents)
+            ?? ($options['rata_rata'] ?? $assessment?->rata_rata);
+        if ($assessmentAverage !== null) {
+            $rataRata = (string) $assessmentAverage;
+            $predikat = ($assessmentAverage >= 85) ? 'Sangat Baik (A)' : (($assessmentAverage >= 75) ? 'Baik (B)' : 'Cukup (C)');
         } else {
             if ($isLiveIssuance) {
                 $rataRata = $options['rata_rata'] ?? null;
@@ -286,6 +310,8 @@ class InternDocumentIssuanceService
             'magang.durasi'                 => $durationStr,
             'penilaian.nilai_akhir'         => $rataRata,
             'penilaian.predikat'            => $predikat,
+            'penilaian.aspek_data'          => $assessmentComponents,
+            'penilaian.tabel_komponen'      => $this->renderAssessmentComponentsTable($assessmentComponents),
             'nilai.rata_rata'               => $rataRata,
             'nilai.predikat'                => $predikat,
             'rekomendasi.isi'               => $options['body_text'] ?? $this->getDefaultRecommendationBody($intern, $companyName, $durationStr),
@@ -374,6 +400,17 @@ class InternDocumentIssuanceService
             $variables['asset.brand.logo']   = $variables['asset.brand.logo'] ?? null;
         }
 
+        // Logo institusi pendaftar juga tersedia langsung pada tabel institutions.
+        // Gunakan sebagai fallback jika SystemAsset belum tersinkron/terdaftar agar
+        // template yang memakai token logo institusi tetap membawa gambar ke PDF.
+        if (empty($variables['asset.institusi.logo']) && !empty($instModel?->logo)) {
+            $institutionLogoData = $resolveImageHelper($instModel->logo);
+            if ($institutionLogoData) {
+                $variables['asset.institusi.logo'] = $institutionLogoData;
+                $variables['asset.institution.logo'] = $institutionLogoData;
+            }
+        }
+
         // 2. Tanda Tangan Penandatangan
         if (!empty($brandModel?->signature)) {
             $sigData = $resolveImageHelper($brandModel->signature);
@@ -450,6 +487,64 @@ class InternDocumentIssuanceService
             'asset_references' => $assetReferences,
             'document_number'  => $docNumber,
         ];
+    }
+
+    /** Render rincian skor yang ditempatkan template melalui token penilaian.tabel_komponen. */
+    private function renderAssessmentComponentsTable(mixed $components): string
+    {
+        if (!is_array($components) || $components === []) {
+            return '';
+        }
+
+        $defaultWeight = 100 / count($components);
+        $weightTotal = array_sum(array_map(
+            static fn ($component) => is_array($component) ? max(0, (float) ($component['bobot'] ?? $defaultWeight)) : 0,
+            $components
+        ));
+        $rows = '';
+        foreach ($components as $index => $component) {
+            if (!is_array($component)) {
+                continue;
+            }
+            $name = htmlspecialchars((string) ($component['aspek'] ?? ''), ENT_QUOTES, 'UTF-8');
+            $score = htmlspecialchars((string) ($component['nilai'] ?? ''), ENT_QUOTES, 'UTF-8');
+            $weight = max(0, (float) ($component['bobot'] ?? $defaultWeight));
+            $weightLabel = htmlspecialchars(rtrim(rtrim(number_format($weight, 2, '.', ''), '0'), '.'), ENT_QUOTES, 'UTF-8');
+            $contribution = $weightTotal > 0
+                ? number_format((float) ($component['nilai'] ?? 0) * $weight / $weightTotal, 2, '.', '')
+                : '0.00';
+            $rows .= '<tr><td>' . ((int) $index + 1) . '</td><td>' . $name . '</td><td>' . $weightLabel . '%</td><td>' . $score . '</td><td>' . $contribution . '</td></tr>';
+        }
+
+        if ($rows === '') {
+            return '';
+        }
+
+        return '<table class="assessment-components"><thead><tr><th>No</th><th>Aspek Penilaian</th><th>Bobot</th><th>Nilai</th><th>Kontribusi</th></tr></thead><tbody>'
+            . $rows
+            . '</tbody></table>';
+    }
+
+    /** Hitung rata-rata berbobot dari aspek yang tersimpan. */
+    private function calculateAssessmentAverage(mixed $components): ?float
+    {
+        if (!is_array($components) || $components === []) {
+            return null;
+        }
+
+        $defaultWeight = 100 / count($components);
+        $weightedTotal = 0.0;
+        $weightTotal = 0.0;
+        foreach ($components as $component) {
+            if (!is_array($component) || !is_numeric($component['nilai'] ?? null)) {
+                continue;
+            }
+            $weight = max(0, (float) ($component['bobot'] ?? $defaultWeight));
+            $weightedTotal += (float) $component['nilai'] * $weight;
+            $weightTotal += $weight;
+        }
+
+        return $weightTotal > 0 ? round($weightedTotal / $weightTotal, 2) : null;
     }
 
     /**
@@ -714,12 +809,8 @@ class InternDocumentIssuanceService
             self::TYPE_ASSESSMENT => tap(InternAssessment::firstOrNew(['intern_id' => $intern->id]), function ($rec) use ($docNumber, $companyName, $brand, $signatoryName, $signatoryPosition, $variables, $options) {
                 $rec->fill([
                     'assessment_number'    => $docNumber,
-                    'aspek_penilaian'      => $options['aspek_penilaian'] ?? ($rec->aspek_penilaian ?: [
-                        ['aspek' => 'Kedisiplinan & Kehadiran', 'nilai' => 90],
-                        ['aspek' => 'Kualitas Kerja & Ketelitian', 'nilai' => 88],
-                        ['aspek' => 'Inisiatif & Kerjasama Tim', 'nilai' => 87],
-                    ]),
-                    'rata_rata'            => (float) ($options['rata_rata'] ?? ($rec->rata_rata ?: 88.33)),
+                    'aspek_penilaian'      => $options['aspek_penilaian'] ?? $rec->aspek_penilaian ?? [],
+                    'rata_rata'            => (float) ($variables['penilaian.nilai_akhir'] ?? $options['rata_rata'] ?? $rec->rata_rata ?? 0),
                     'company_name'         => $companyName,
                     'company_address'      => $variables['perusahaan.alamat'] ?? ($rec->company_address ?: ''),
                     'company_logo_path'    => $brand?->logo ?? $rec->company_logo_path,

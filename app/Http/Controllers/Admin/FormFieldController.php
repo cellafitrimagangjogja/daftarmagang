@@ -220,13 +220,9 @@ class FormFieldController extends Controller
             $key = $baseKey . '_' . $i++;
         }
 
-        $options = null;
-        if (!empty($validated['options'])) {
-            $decoded = json_decode($validated['options'], true);
-            if (is_array($decoded)) {
-                $options = $decoded;
-            }
-        }
+        // Biarkan service memvalidasi struktur JSON dan memastikan field pilihan
+        // tidak tersimpan tanpa opsi.
+        $options = $validated['options'] ?? null;
 
         $validationRules = null;
         if (!empty($validated['validation_rules'])) {
@@ -321,9 +317,20 @@ class FormFieldController extends Controller
             $updateData['field_type'] = $validated['field_type'];
         }
 
-        if (isset($validated['options']) && $validated['options'] !== null && $validated['options'] !== '') {
-            $decoded = json_decode($validated['options'], true);
-            if (is_array($decoded)) {
+        $targetFieldType = $updateData['field_type'] ?? $field->field_type;
+        if (in_array($targetFieldType, ['select', 'radio', 'checkbox'], true)) {
+            $rawOptions = $validated['options'] ?? '';
+            if ($rawOptions === '') {
+                $updateData['options'] = [];
+            } else {
+                $decoded = json_decode($rawOptions, true);
+                if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+                    $msg = 'Format opsi tidak valid. Periksa kembali opsi pertanyaan.';
+                    if ($request->wantsJson() || $request->ajax()) {
+                        return response()->json(['ok' => false, 'message' => $msg], 422);
+                    }
+                    return back()->withInput()->withErrors(['options' => $msg])->with('error', $msg);
+                }
                 $updateData['options'] = $decoded;
             }
         }

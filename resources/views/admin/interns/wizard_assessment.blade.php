@@ -123,8 +123,9 @@
                     <table class="w-full text-left text-sm">
                         <thead class="bg-[#F4F8F6]">
                             <tr>
-                                <th class="px-4 py-3 text-[12px] font-bold text-[#1B3A34] w-[60%]">Aspek yang Dinilai</th>
-                                <th class="px-4 py-3 text-[12px] font-bold text-[#1B3A34] w-[25%] text-center">Nilai (0-100)</th>
+                                <th class="px-4 py-3 text-[12px] font-bold text-[#1B3A34] w-[42%]">Aspek yang Dinilai</th>
+                                <th class="px-4 py-3 text-[12px] font-bold text-[#1B3A34] w-[19%] text-center">Nilai (0-100)</th>
+                                <th class="px-4 py-3 text-[12px] font-bold text-[#1B3A34] w-[19%] text-center">Bobot (%)</th>
                                 <th class="px-4 py-3 text-[12px] font-bold text-[#1B3A34] w-[15%] text-center">Aksi</th>
                             </tr>
                         </thead>
@@ -133,13 +134,15 @@
                         </tbody>
                         <tfoot class="bg-[#F4F8F6]">
                             <tr>
-                                <td class="px-4 py-3 text-right font-bold text-[#1B3A34]">Rata-rata:</td>
+                                <td class="px-4 py-3 text-right font-bold text-[#1B3A34]">Nilai berbobot:</td>
                                 <td class="px-4 py-3 text-center font-bold text-[#2D8659]" id="average-score">0</td>
+                                <td class="px-4 py-3 text-center text-xs font-semibold text-[#4B5F5A]" id="weight-total">Total: 0%</td>
                                 <td></td>
                             </tr>
                         </tfoot>
                     </table>
                 </div>
+                <p class="mt-2 text-[11px] text-[#64756F]">Bobot tiap aspek dihitung proporsional terhadap total bobot. Totalnya tidak harus tepat 100%, tetapi minimal satu aspek harus memiliki bobot di atas 0%.</p>
 
                 <div class="mt-6 flex justify-between items-center border-t border-[#DCE7E1] pt-5">
                     <button type="button" id="btn-prev" onclick="prevIntern()" class="rounded-[8px] border border-[#DCE7E1] bg-white px-5 py-2.5 text-[13px] font-bold text-[#4B5F5A] transition hover:bg-[#F4F8F6] disabled:opacity-50 disabled:cursor-not-allowed">
@@ -163,7 +166,7 @@
     let currentIndex = 0;
     
     // Storage Key
-    const STORAGE_KEY = 'assessment_wizard_draft';
+    const STORAGE_KEY = 'assessment_wizard_draft_v2';
 
     // Inisialisasi
     document.addEventListener('DOMContentLoaded', () => {
@@ -177,7 +180,17 @@
                 const currentIds = rawData.map(r => r.intern_id).sort().join(',');
                 
                 if (draftIds === currentIds) {
-                    internsData = parsed;
+                    internsData = parsed.map(intern => {
+                        const equalWeight = 100 / Math.max(1, intern.aspects?.length || 1);
+                        return {
+                            ...intern,
+                            aspects: (intern.aspects || []).map(aspect => ({
+                                ...aspect,
+                                nilai: aspect.nilai ?? '',
+                                bobot: aspect.bobot ?? equalWeight
+                            }))
+                        };
+                    });
                 } else {
                     initFromRawData();
                 }
@@ -195,10 +208,11 @@
         // Format rawData agar sesuai struktur state
         internsData = rawData.map(intern => ({
             ...intern,
-            // Jika nilai belum ada (baru), set default 95
+            // Nilai baru harus diisi; hanya bobot yang diberi nilai awal merata.
             aspects: intern.aspects.map(a => ({
                 aspek: a.aspek,
-                nilai: a.nilai || 95
+                nilai: a.nilai ?? '',
+                bobot: a.bobot ?? (100 / Math.max(1, intern.aspects.length))
             }))
         }));
         saveDraft();
@@ -261,7 +275,10 @@
                     <input type="text" class="aspect-name-input w-full rounded-[6px] border border-[#DCE7E1] px-3 py-1.5 text-[13px] focus:border-[#2D8659] focus:outline-none focus:ring-1 focus:ring-[#2D8659]" value="${aspect.aspek}" data-index="${index}" oninput="updateAspect(${index}, 'name', this.value)">
                 </td>
                 <td class="px-4 py-3">
-                    <input type="number" min="0" max="100" class="aspect-score-input w-full text-center rounded-[6px] border border-[#DCE7E1] px-3 py-1.5 text-[13px] focus:border-[#2D8659] focus:outline-none focus:ring-1 focus:ring-[#2D8659]" value="${aspect.nilai}" data-index="${index}" oninput="updateAspect(${index}, 'score', this.value)">
+                    <input type="number" min="0" max="100" required placeholder="Isi nilai" class="aspect-score-input w-full text-center rounded-[6px] border border-[#DCE7E1] px-3 py-1.5 text-[13px] focus:border-[#2D8659] focus:outline-none focus:ring-1 focus:ring-[#2D8659]" value="${aspect.nilai ?? ''}" data-index="${index}" oninput="updateAspect(${index}, 'score', this.value)">
+                </td>
+                <td class="px-4 py-3">
+                    <input type="number" min="0" max="100" step="0.01" class="aspect-weight-input w-full text-center rounded-[6px] border border-[#DCE7E1] px-3 py-1.5 text-[13px] focus:border-[#2D8659] focus:outline-none focus:ring-1 focus:ring-[#2D8659]" value="${aspect.bobot ?? 0}" data-index="${index}" oninput="updateAspect(${index}, 'weight', this.value)">
                 </td>
                 <td class="px-4 py-3 text-center">
                     <button type="button" onclick="removeAspectRow(${index})" class="text-[#D32F2F] hover:bg-red-50 p-1.5 rounded-full transition" title="Hapus Aspek">
@@ -295,11 +312,24 @@
         if (field === 'name') {
             internsData[currentIndex].aspects[index].aspek = value;
         } else if (field === 'score') {
+            if (value === '') {
+                internsData[currentIndex].aspects[index].nilai = '';
+                calculateAverage();
+                saveDraft();
+                return;
+            }
             let num = parseFloat(value);
             if (isNaN(num)) num = 0;
             if (num > 100) num = 100;
             if (num < 0) num = 0;
             internsData[currentIndex].aspects[index].nilai = num;
+            calculateAverage();
+        } else if (field === 'weight') {
+            let num = parseFloat(value);
+            if (isNaN(num)) num = 0;
+            if (num > 100) num = 100;
+            if (num < 0) num = 0;
+            internsData[currentIndex].aspects[index].bobot = num;
             calculateAverage();
         }
         saveDraft();
@@ -308,7 +338,8 @@
     function addAspectRow() {
         internsData[currentIndex].aspects.push({
             aspek: 'Aspek Tambahan',
-            nilai: 95
+            nilai: '',
+            bobot: 0
         });
         saveDraft();
         renderStep();
@@ -327,9 +358,11 @@
             return;
         }
         
-        const sum = aspects.reduce((acc, curr) => acc + (parseFloat(curr.nilai) || 0), 0);
-        const avg = sum / aspects.length;
+        const weightTotal = aspects.reduce((acc, curr) => acc + (parseFloat(curr.bobot) || 0), 0);
+        const weightedSum = aspects.reduce((acc, curr) => acc + ((parseFloat(curr.nilai) || 0) * (parseFloat(curr.bobot) || 0)), 0);
+        const avg = weightTotal > 0 ? weightedSum / weightTotal : 0;
         document.getElementById('average-score').textContent = avg.toFixed(2);
+        document.getElementById('weight-total').textContent = `Total: ${weightTotal.toFixed(2)}%`;
     }
 
     function prevIntern() {
@@ -357,6 +390,11 @@
             return;
         }
 
+        if (aspects.some(a => a.nilai === '' || a.nilai === null || !Number.isFinite(Number(a.nilai)))) {
+            alert('Isi nilai untuk setiap aspek sebelum melanjutkan.');
+            return;
+        }
+
         if (currentIndex < internsData.length - 1) {
             currentIndex++;
             renderStep();
@@ -378,6 +416,7 @@
                     intern_id: intern.intern_id,
                     aspek: intern.aspects.map(a => a.aspek),
                     nilai: intern.aspects.map(a => a.nilai),
+                    bobot: intern.aspects.map(a => a.bobot),
                     // Jika ada signatory settings dari model
                     company_name: intern.signatory ? intern.signatory.company_name : null,
                     company_address: intern.signatory ? intern.signatory.company_address : null,

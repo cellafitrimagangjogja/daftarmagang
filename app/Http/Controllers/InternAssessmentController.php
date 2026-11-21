@@ -79,16 +79,32 @@ class InternAssessmentController extends Controller
         return "{$seqStr}/PEN/{$division}/SEVEN.{$brandStr}/{$romanMonth}/{$year}";
     }
 
-    private function buildAspekData(array $aspeks, array $nilais): array
+    private function buildAspekData(array $aspeks, array $nilais, array $bobots = []): array
     {
-        $data  = [];
-        $total = 0;
+        if ($aspeks === []) {
+            throw new \InvalidArgumentException('Tambahkan minimal satu aspek penilaian.');
+        }
+        if (count($nilais) !== count($aspeks) || ($bobots !== [] && count($bobots) !== count($aspeks))) {
+            throw new \InvalidArgumentException('Jumlah nilai dan bobot harus sama dengan jumlah aspek.');
+        }
+
+        $defaultWeight = 100 / count($aspeks);
+        $data = [];
+        $weightedTotal = 0.0;
+        $weightTotal = 0.0;
         foreach ($aspeks as $i => $aspek) {
             $nilai  = max(0, min(100, (float) ($nilais[$i] ?? 0)));
-            $data[] = ['aspek' => $aspek, 'nilai' => $nilai];
-            $total += $nilai;
+            $bobot = max(0, min(100, (float) ($bobots[$i] ?? $defaultWeight)));
+            $data[] = ['aspek' => trim((string) $aspek), 'nilai' => $nilai, 'bobot' => round($bobot, 2)];
+            $weightedTotal += $nilai * $bobot;
+            $weightTotal += $bobot;
         }
-        $avg = count($aspeks) > 0 ? round($total / count($aspeks), 2) : 0;
+
+        if ($weightTotal <= 0) {
+            throw new \InvalidArgumentException('Jumlah bobot harus lebih dari 0%.');
+        }
+
+        $avg = round($weightedTotal / $weightTotal, 2);
         return [$data, $avg];
     }
 
@@ -457,6 +473,19 @@ class InternAssessmentController extends Controller
             // Find signatory for brand
             $brandModel = $intern->brandRel;
             $brandName = $brandModel?->name ?? $intern->brand;
+            $savedAssessment = InternAssessment::where('intern_id', $intern->id)->latest('id')->first();
+            $aspects = $savedAssessment?->aspek_penilaian;
+            if (!is_array($aspects) || $aspects === []) {
+                $aspects = $defaultAspects[$division];
+            }
+            $defaultWeight = 100 / max(1, count($aspects));
+            $aspects = array_map(static function ($aspect) use ($defaultWeight, $savedAssessment) {
+                return [
+                    'aspek' => (string) ($aspect['aspek'] ?? ''),
+                    'nilai' => $savedAssessment ? ($aspect['nilai'] ?? '') : '',
+                    'bobot' => $aspect['bobot'] ?? $defaultWeight,
+                ];
+            }, $aspects);
             
             $wizardData[] = [
                 'intern_id' => $intern->id,
@@ -465,7 +494,7 @@ class InternAssessmentController extends Controller
                 'study_program' => $intern->study_program ?? '-',
                 'brand' => $brandName ?? '-',
                 'division' => $intern->internship_interest ?? '-',
-                'aspects' => $defaultAspects[$division],
+                'aspects' => $aspects,
                 'signatory' => $brandModel ? [
                     'company_name' => $brandModel->name,
                     'company_address' => $brandModel->company_address,
@@ -498,6 +527,9 @@ class InternAssessmentController extends Controller
             'assessments.*.intern_id' => 'required|integer|exists:internship_registrations,id',
             'assessments.*.aspek' => 'required|array',
             'assessments.*.nilai' => 'required|array',
+            'assessments.*.nilai.*' => 'required|numeric|min:0|max:100',
+            'assessments.*.bobot' => 'nullable|array',
+            'assessments.*.bobot.*' => 'nullable|numeric|min:0|max:100',
             'assessments.*.company_name' => 'nullable|string',
             'assessments.*.company_address' => 'nullable|string',
             'assessments.*.signatory_name' => 'nullable|string',
@@ -511,7 +543,7 @@ class InternAssessmentController extends Controller
 
         foreach ($request->input('assessments') as $idx => $item) {
             try {
-                [$data, $avg] = $this->buildAspekData($item['aspek'] ?? [], $item['nilai'] ?? []);
+                [$data, $avg] = $this->buildAspekData($item['aspek'] ?? [], $item['nilai'] ?? [], $item['bobot'] ?? []);
 
                 $intern = IR::find($item['intern_id']);
                 $assessmentNumber = $this->generateAssessmentNumber($intern);
@@ -540,8 +572,11 @@ class InternAssessmentController extends Controller
 
         if ($request->wantsJson()) {
             return response()->json([
-                'success' => true,
-                'message' => "✅ {$saved} penilaian berhasil disimpan.",
+                'success' => empty($errors) && $saved === count($request->input('assessments', [])),
+                'saved' => $saved,
+                'message' => empty($errors)
+                    ? "✅ {$saved} penilaian berhasil disimpan."
+                    : "{$saved} penilaian berhasil disimpan, " . count($errors) . ' gagal.',
                 'errors' => $errors
             ]);
         }
@@ -662,6 +697,8 @@ class InternAssessmentController extends Controller
             $preview = $issuanceService->previewDocument($assessment->intern, 'assessment', [
                 'template_id'     => $activeTemplate->id,
                 'document_number' => $assessment->assessment_number,
+                'aspek_penilaian' => $assessment->aspek_penilaian,
+                'rata_rata'       => $assessment->rata_rata,
             ]);
             return response($preview['html'], 200, ['Content-Type' => 'text/html; charset=UTF-8']);
         }
@@ -703,7 +740,9 @@ class InternAssessmentController extends Controller
 
         $logoSrc = $resolveImg(
             $brandModel?->logo,
-            $assessment->company_logo_path
+            $assessment->company_logo_path,
+            'images/mou/seven-inc-logo.png',
+            'images/logos/logo_seveninc.png'
         );
         $sigSrc = $resolveImg(
             $brandModel?->signature,
@@ -749,26 +788,16 @@ class InternAssessmentController extends Controller
         $activeTemplate = $issuanceService->resolveActiveTemplate('assessment', failClosed: false);
 
         if ($activeTemplate && $activeTemplate->exists && $assessment->intern) {
-            // 1. Cek berkas GeneratedDocument valid sudah ada di local storage
-            $genDoc = \App\Models\GeneratedDocument::select(['id', 'file_path', 'file_name'])
-                ->where('internship_registration_id', $assessment->intern->id)
-                ->where('document_type', 'assessment')
-                ->latest('id')
-                ->first();
-
-            if ($genDoc && \Illuminate\Support\Facades\Storage::disk('local')->exists($genDoc->file_path)) {
-                $fullPath = \Illuminate\Support\Facades\Storage::disk('local')->path($genDoc->file_path);
-                return response()->download($fullPath, $filename, ['Content-Type' => 'application/pdf']);
-            }
-
-            // 2. Issue dokumen resmi dari template aktif agar tersimpan sebagai GeneratedDocument dan tersinkron ke Google Drive
             try {
                 $issued = $issuanceService->issueDocument(
                     intern: $assessment->intern,
                     documentType: 'assessment',
                     options: [
                         'document_number' => $assessment->assessment_number,
-                        'template_id'     => $activeTemplate->id,
+                        'template_id' => $activeTemplate->id,
+                        'force_refresh' => true,
+                        'aspek_penilaian' => $assessment->aspek_penilaian,
+                        'rata_rata' => $assessment->rata_rata,
                     ],
                     actor: $user
                 );
@@ -778,39 +807,40 @@ class InternAssessmentController extends Controller
                     return response()->download($fullPath, $filename, ['Content-Type' => 'application/pdf']);
                 }
             } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning("Gagal issue assessment dari template: " . $e->getMessage() . " — mencoba render langsung");
+                \Illuminate\Support\Facades\Log::warning('Gagal issue assessment dari template aktif: ' . $e->getMessage());
                 try {
                     $context = $issuanceService->buildContext($assessment->intern, 'assessment', [
                         'document_number' => $assessment->assessment_number,
-                        'template_id'     => $activeTemplate->id,
+                        'template_id' => $activeTemplate->id,
+                        'aspek_penilaian' => $assessment->aspek_penilaian,
+                        'rata_rata' => $assessment->rata_rata,
                     ], isLiveIssuance: true);
 
-                    $pdfBinary = \App\Services\DocumentTemplates\DocumentTemplateRenderer::renderPdfBinary($activeTemplate, $context['variables'], isLiveIssuance: true);
-
+                    $pdfBinary = \App\Services\DocumentTemplates\DocumentTemplateRenderer::renderPdfBinary(
+                        $activeTemplate,
+                        $context['variables'],
+                        isLiveIssuance: true
+                    );
                     $tmpPath = storage_path('app/tmp/' . $filename);
                     if (!is_dir(dirname($tmpPath))) {
                         mkdir(dirname($tmpPath), 0775, true);
                     }
                     file_put_contents($tmpPath, $pdfBinary);
 
-                    try {
-                        $pubService = app(\App\Services\DocumentPublishingService::class);
-                        $pubService->publishInternDocument(
-                            intern: $assessment->intern,
-                            documentType: 'assessment',
-                            customDocNumber: $assessment->assessment_number,
-                            actor: $user,
-                            pdfBinary: $pdfBinary,
-                            template: $activeTemplate
-                        );
-                    } catch (\Throwable $ePub) {
-                        \Illuminate\Support\Facades\Log::warning("Gagal publish assessment template fallback ke Drive: " . $ePub->getMessage());
-                    }
+                    app(\App\Services\DocumentPublishingService::class)->publishInternDocument(
+                        intern: $assessment->intern,
+                        documentType: 'assessment',
+                        customDocNumber: $assessment->assessment_number,
+                        actor: $user,
+                        pdfBinary: $pdfBinary,
+                        template: $activeTemplate,
+                        forceRefresh: true
+                    );
 
                     return response()->download($tmpPath, $filename, ['Content-Type' => 'application/pdf'])
                         ->deleteFileAfterSend(true);
                 } catch (\Throwable $eDirect) {
-                    \Illuminate\Support\Facades\Log::warning("Gagal direct render assessment: " . $eDirect->getMessage());
+                    \Illuminate\Support\Facades\Log::warning('Gagal merender penilaian dengan template aktif: ' . $eDirect->getMessage());
                 }
             }
         }
@@ -852,7 +882,9 @@ class InternAssessmentController extends Controller
 
         $logoSrc = $resolveImg(
             $brandModel?->logo,
-            $assessment->company_logo_path
+            $assessment->company_logo_path,
+            'images/mou/seven-inc-logo.png',
+            'images/logos/logo_seveninc.png'
         );
         $sigSrc = $resolveImg(
             $brandModel?->signature,
@@ -917,7 +949,8 @@ class InternAssessmentController extends Controller
                 customDocNumber: $assessment->assessment_number,
                 actor: $user,
                 pdfBinary: file_get_contents($tmpPath),
-                template: null
+                template: null,
+                forceRefresh: true
             );
         } catch (\Throwable $ePub) {
             \Illuminate\Support\Facades\Log::warning("Gagal publish assessment fallback ke Drive: " . $ePub->getMessage());

@@ -199,7 +199,10 @@
                 $savedArr = array_map(fn($v) => strtolower(trim((string)$v)), $rawArr);
                 $groupCls  = 'border border-gray-200 rounded-lg divide-y divide-gray-100 overflow-hidden w-full bg-white';
                 $itemCls   = 'flex items-center gap-3 px-3.5 py-2.5 hover:bg-gray-50 transition cursor-pointer select-none';
-                $checkHtml = '<div class="' . $groupCls . '">';
+                $requiredGroupAttrs = $field->is_required
+                    ? ' data-required-checkbox-group="1" data-field-label="' . e($field->label) . '"'
+                    : '';
+                $checkHtml = '<div class="' . $groupCls . '"' . $requiredGroupAttrs . '>';
                 foreach ($field->options ?? [] as $opt) {
                     $optValLower = strtolower((string) $opt['value']);
                     $isMatch = in_array($opt['value'], $rawArr)
@@ -361,6 +364,38 @@
     {!! $renderGroup($gDataDiri) !!}
 </div>
 @endif
+
+@once
+<script>
+document.addEventListener('change', function (event) {
+    const group = event.target.closest('[data-required-checkbox-group="1"]');
+    if (!group) return;
+
+    group.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
+        checkbox.setCustomValidity('');
+    });
+});
+
+document.addEventListener('submit', function (event) {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement)) return;
+
+    const groups = form.querySelectorAll('[data-required-checkbox-group="1"]');
+    for (const group of groups) {
+        const checkboxes = Array.from(group.querySelectorAll('input[type="checkbox"]'));
+        if (checkboxes.length === 0 || checkboxes.some(function (checkbox) { return checkbox.checked; })) continue;
+
+        event.preventDefault();
+        const firstCheckbox = checkboxes[0];
+        const label = group.dataset.fieldLabel || 'pertanyaan ini';
+        firstCheckbox.setCustomValidity('Pilih minimal satu opsi untuk ' + label + '.');
+        firstCheckbox.reportValidity();
+        firstCheckbox.focus();
+        break;
+    }
+}, true);
+</script>
+@endonce
 
 {{-- ==================== 2. PILIHAN & DURASI ==================== --}}
 @if($gPilihan->isNotEmpty())
