@@ -524,7 +524,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <select id="followup-filter" class="w-full appearance-none rounded-[9px] border border-[#DCE7E1] bg-white pl-9 pr-8 py-2.5 text-[12.5px] font-semibold text-[#1B3A34] shadow-2xs outline-none transition focus:border-[#2D8659] focus:ring-1 focus:ring-[#2D8659]">
                             <option value="">Semua Status Follow-Up</option>
                             @foreach(\App\Models\InternshipRegistration::FOLLOWUP_STATUS_LABELS as $fKey => $fLabel)
-                                <option value="{{ $fKey }}">{{ $fLabel }}</option>
+                                <option value="{{ $fKey }}" style="{{ \App\Models\InternshipRegistration::FOLLOWUP_STATUS_STYLES[$fKey] }}">{{ $fLabel }}</option>
                             @endforeach
                         </select>
                         <div class="pointer-events-none absolute left-3 flex items-center text-[#4B5F5A]">
